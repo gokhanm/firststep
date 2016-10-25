@@ -51,3 +51,5 @@ if [ ! -z "$shortcuts" ]; then
 
 fi
 
+# SSD check, if found apply fstab settings in settings/ssd 
+ssd_check

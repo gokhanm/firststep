@@ -74,10 +74,103 @@ keyboard_shortcut () {
                 echo "$(greenb "OK") $(textb "Keyboard shortcut added: $2 $3")"
             else    
                 echo "$(greenb "ERROR") $(textb "Keyboard shortcut not added: $2 $3")"
+                exit 1
             fi
         fi
-        
+    fi
+}
+
+# If ssd found apply settings in settings/ssd 
+ssd_check () {
+    # You should get 1 for hard disks and 0 for a SSD. 
+    partition="$(fdisk -l 2>/dev/null | grep '/dev/sd[a-z][1-9]' | grep "Linux" | grep -v "swap" | awk '{print $1}')"
+    disk="$(printf '%s\n' "${partition//[[:digit:]]/}" | cut -d'/' -f3)"
+    ssd="$(cat /sys/block/$disk/queue/rotational)"
+
+    if [[ "$ssd" == "0" ]]; then
+        while true; do
+            read -p "$(redb "WARNING") $(textb "These changes may damage the
+            system. Do you want to continue? [Yy / Nn]")" yn
+            case $yn in
+                [Yy]* )
+                    parsing_ssd_settings
+                    echo "$(textb "SSD Found. Finding Linux Installation on Disk")"
+                    echo "$(textb "Linux partition: ") $(textb "$partition")"
+                    echo "$(textb "Finding Partition in /etc/fstab")"
+                    sda_in_fstab="$(test $(grep $partition /etc/fstab | grep -v "#" | wc -l) -gt 0; echo $?)"
+                    
+                    if [[ "$sda_in_fstab" == "1" ]]; then
+                        echo "$(textb "$partition not found in /etc/fstab")"
+                        echo "$(textb "Finding UUID for ") $(textb "$partition")"
+                        uuid="$(blkid $partition | awk '{print $2}' | cut -d'"' -f2)"
+                        echo "$(textb "UUID Found:") $(textb "$uuid")"
+                        
+                        apply_ssd_settings $uuid
+                    else
+                        apply_ssd_settings $partition
+                    fi
+                ;;
+                [nN]* )
+                    echo "$(greenb "OK") $(textb "Resuming without application changes..")"
+                    break
+                ;;
+                * )
+                    echo "$(textb "Please answer Y/y/n/N")"
+                ;;
+            esac
+        done
+    fi
+}
+
+# parsing personal settings in settings/ssd
+parsing_ssd_settings () {
+ssd_settings=(`cat "settings/ssd"`)
+
+if [ ! -z "$ssd_settings" ];then
+    for line in ${ssd_settings[@]}
+    do
+        if [[ ! "$line" == "#"* ]];then
+            export mount_point="$(echo $line | cut -d'|' -f1)"
+            export options="$(echo $line | cut -d'|' -f2)"
+        fi
+    done
+fi
+}
+
+# apply ssd settings to fstab function
+apply_ssd_settings () {
+cp /etc/fstab /tmp/
+
+if [ $? -eq 0 ]; then
+    echo "$(greenb "OK") $(textb "Backup /etc/fstab in tmp")"
+
+    old_options="$(grep $1 /etc/fstab | awk '{print $4}')"
+    new_options=$options
+
+    echo "$(textb "Changing $old_options with $new_options")"
+
+    sed -i "s/$old_options/$new_options/" /etc/fstab
+
+    if [ $? -eq 0 ];then
+        echo "$(greenb "OK") $(textb "Editing fstab complate")"
+        echo "$(greenb "INFO") $(textb "Validating fstab settings")"
+
+        mount -a
+
+        if [ $? -eq 0 ];then
+            echo "$(greenb "OK") $(textb "Fstab validate complate")"
+        else
+            echo "$(redb "ERROR") $(textb "Fstab settings error. Check fstab settings")"
+            exit 1
+        fi
+    else
+        echo "$(redb "ERROR") $(textb "Editing fstab complate")"
+        exit 1
     fi
 
+else
+    echo "$(redb "ERROR") $(textb "Backup /etc/fstab in tmp")"
+    exit 1
+fi
 }
 
