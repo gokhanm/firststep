@@ -4,16 +4,16 @@
 # GNU GENERAL PUBLIC LICENSE
 # Gokhan MANKARA <gokhan@mankara.org>
 
+source includes/version
+source includes/functions.sh
 
 # root check
 if [ "$EUID" -ne 0 ]; then
-    echo "$(textb "ERROR") $(textb "Please run as root")"
+    echo "$(redb "ERROR") $(textb "Please run as root")"
     exit 1
 fi
 
 cat includes/banner
-source includes/version
-source includes/functions.sh
 
 echo "$(textb "First Step Installation Script Version:") $(textb "$version")"
 

@@ -22,8 +22,6 @@ find_os () {
 
 # If debian found using apt-get update command function
 update_repo () {
-    find_os
-
     if [[ "$os" == "Debian" ]]; then 
         textb "Updating Debian Repo"
         apt-get update
@@ -38,8 +36,6 @@ update_repo () {
 
 # Install Package Function
 install_package () {
-    find_os
-
     echo "$(textb "Installing Package: ") $(textb "$1")"
     if [[ "$os" == "Debian" ]]; then
         apt-get install -y $1
@@ -71,9 +67,9 @@ keyboard_shortcut () {
             echo "$(textb "Desktop Environment Found: ") $(textb "Gnome 3")"
             su - $user -c "gsettings set org.gnome.desktop.wm.keybindings $name $key"
             if [ $? -eq 0 ];then
-                echo "$(greenb "OK") $(textb "Keyboard shortcut added: $2 $3")"
+                echo "$(greenb "OK") $(textb "Keyboard shortcut added: $name $key")"
             else    
-                echo "$(greenb "ERROR") $(textb "Keyboard shortcut not added: $2 $3")"
+                echo "$(greenb "ERROR") $(textb "Keyboard shortcut not added: $name $key")"
                 exit 1
             fi
         fi
@@ -167,7 +163,6 @@ if [ $? -eq 0 ]; then
         echo "$(redb "ERROR") $(textb "Editing fstab complate")"
         exit 1
     fi
-
 else
     echo "$(redb "ERROR") $(textb "Backup /etc/fstab in tmp")"
     exit 1
