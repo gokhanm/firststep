@@ -13,6 +13,9 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
+# create user if not exists
+create_user
+
 cat includes/banner
 
 echo "$(textb "First Step Installation Script Version:") $(textb "$version")"
@@ -37,7 +40,7 @@ if [ ! -z "$packages" ]; then
     done
 fi
 
-# Apply custom keyboard shortcuts settings in settings/keyboard_shortcuts
+# Apply custom keyboard shortcuts settings from settings/keyboard_shortcuts
 readarray shortcuts < "settings/keyboard_shortcuts"
 
 # if array is not empty
@@ -48,8 +51,18 @@ if [ ! -z "$shortcuts" ]; then
             keyboard_shortcut $key 
         fi
     done
-
 fi
 
 # SSD check, if found apply fstab settings in settings/ssd 
 ssd_check
+
+# Gnome shell extensions installation from settings/extensions
+readarray extensions < "settings/extensions"
+if [ ! -z "$extensions" ]; then
+    for ext_id in "${extensions[@]}"
+    do
+        if [[ ! "$ext_id" == "#"* ]];then
+            gnome_shell_ext $ext_id
+        fi
+    done
+fi

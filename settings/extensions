@@ -1,0 +1,8 @@
+# Gnome Shell Extensions
+# per line you have to write extension id
+# You can find extension id in extension installation url
+# https://extensions.gnome.org/extension/495/topicons/
+# "Panel_Favorites@rmy.pobox.com" id
+4
+# topIcons@adel.gadllah@gmail.com id
+495
