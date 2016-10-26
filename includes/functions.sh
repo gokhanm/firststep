@@ -198,7 +198,7 @@ apply_ssd_settings () {
 
 # install gnome shell extensions
 gnome_shell_ext () {
-    if [[ ! "$(pgrep -f gnome | wc -l)" == 0  ]]; then
+    if [[ ! "$(pgrep -f gnome | wc -l)" == "0"  ]]; then
         echo "$(textb "Installing Gnome Extensions")"
         bash tools/gnome-shell-extension-installer $1 --restart-shell
     fi
