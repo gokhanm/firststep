@@ -219,8 +219,7 @@ gnome_shell_ext () {
 
 # Current running path
 running_path () {
-    current_path=`pwd`
-    export $current_path
+    export current_path="`pwd`"
 }
 
 # Restart system function
@@ -235,7 +234,7 @@ restart_system () {
                 restart
             ;;
             [Nn]* )
-                echo "$(textb "Installation Complate")"
+                echo "$(textb "Installation Complate. Exit.")"
                 exit 1
             ;;
             * )
