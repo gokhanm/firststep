@@ -146,7 +146,8 @@ ssd_check () {
                 fi
             ;;
             [nN]* )
-                echo "$(greenb "OK") $(textb "Resuming without application changes..")"
+                echo "$(greenb "OK") $(textb "Resuming without applying ssd
+                settings")"
             ;;
             * )
                 echo "$(textb "Please answer Y/y/n/N")"
@@ -222,3 +223,25 @@ running_path () {
     export $current_path
 }
 
+# Restart system function
+restart_system () {
+    while true; do
+        read -p "$(redb "WARNING") $(textb "Installation Complate. Do you want to
+        restart the system? [Yy / Nn]")" yn
+
+        case $yn in
+            [Yy]* )
+                echo "$(textb "Restarting the system")"
+                restart
+            ;;
+            [Nn]* )
+                echo "$(textb "Installation Complate")"
+                exit 1
+            ;;
+            * )
+                echo "$(textb "Please answer Y/y/n/N")"
+                break
+            ;;
+        esac
+    done
+}

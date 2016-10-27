@@ -71,3 +71,6 @@ if [ ! -z "$extensions" ]; then
         fi
     done
 fi
+
+# Installation Complete. Ask for restart the system
+restart_system
