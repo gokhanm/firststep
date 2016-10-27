@@ -231,7 +231,7 @@ restart_system () {
         case $yn in
             [Yy]* )
                 echo "$(textb "Restarting the system")"
-                restart
+                reboot
             ;;
             [Nn]* )
                 echo "$(textb "Installation Complate. Exit.")"
