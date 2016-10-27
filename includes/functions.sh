@@ -19,7 +19,7 @@ redb() {
 create_user () {
     readarray usernames < "settings/user"
     if [ ! -z "$usernames" ]; then
-        for user in "${extensions[@]}"
+        for user in "${usernames[@]}"
         do
             if [[ ! "$user" == "#"* ]];then
                 echo "$(greenb "INFO") $(textb "Checking User: $user")"
@@ -62,6 +62,19 @@ update_repo () {
     fi
 }
 
+upgrade_repo () {
+    if [[ "$os" == "Debian" ]]; then 
+        textb "Upgrading Debian Packages"
+        apt-get upgrade -y
+        if [ $? -eq 0 ]; then
+            echo "$(greenb "OK") $(textb "Debian Packages Upgraded")"
+        else
+            echo "$(redb "ERROR") $(textb "Debian Package Upgrade Error")"
+            exit 1
+        fi
+    fi
+}
+
 # Install Package Function
 install_package () {
     echo "$(textb "Installing Package: ") $(textb "$1")"
@@ -92,11 +105,11 @@ keyboard_shortcut () {
     if [[ ! "$(pgrep -f gnome | wc -l)" == 0  ]]; then
         if [[ "$(gnome-shell --version | awk '{print $3 }' | cut -d'.' -f1)" == "3"* ]]; then
             echo "$(textb "Desktop Environment Found: ") $(textb "Gnome 3")"
-            su - $user -c "gsettings set org.gnome.desktop.wm.keybindings $name $key"
+            su - $user -c "gsettings set org.gnome.desktop.wm.keybindings $1 \"$2\""
             if [ $? -eq 0 ];then
-                echo "$(greenb "OK") $(textb "Keyboard shortcut added: $name $key")"
+                echo "$(greenb "OK") $(textb "Keyboard shortcut added: $1 $2")"
             else    
-                echo "$(greenb "ERROR") $(textb "Keyboard shortcut not added: $name $key")"
+                echo "$(redb "ERROR") $(textb "Keyboard shortcut not added: $1 $2")"
                 exit 1
             fi
         fi
@@ -111,37 +124,35 @@ ssd_check () {
     ssd="$(cat /sys/block/$disk/queue/rotational)"
 
     if [[ "$ssd" == "0" ]]; then
-        while true; do
-            read -p "$(redb "WARNING") $(textb "These changes may damage the
-            system. Do you want to continue? [Yy / Nn]")" yn
-            case $yn in
-                [Yy]* )
-                    parsing_ssd_settings
-                    echo "$(textb "SSD Found. Finding Linux Installation on Disk")"
-                    echo "$(textb "Linux partition: ") $(textb "$partition")"
-                    echo "$(textb "Finding Partition in /etc/fstab")"
-                    sda_in_fstab="$(test $(grep $partition /etc/fstab | grep -v "#" | wc -l) -gt 0; echo $?)"
+        read -p "$(redb "WARNING") $(textb "These changes may damage the
+        system. Do you want to continue? [Yy / Nn]")" yn
+        case $yn in
+            [Yy]* )
+                parsing_ssd_settings
+                echo "$(textb "SSD Found. Finding Linux Installation on Disk")"
+                echo "$(textb "Linux partition: ") $(textb "$partition")"
+                echo "$(textb "Finding Partition in /etc/fstab")"
+                sda_in_fstab="$(test $(grep $partition /etc/fstab | grep -v "#" | wc -l) -gt 0; echo $?)"
+                
+                if [[ "$sda_in_fstab" == "1" ]]; then
+                    echo "$(textb "$partition not found in /etc/fstab")"
+                    echo "$(textb "Finding UUID for ") $(textb "$partition")"
+                    uuid="$(blkid $partition | awk '{print $2}' | cut -d'"' -f2)"
+                    echo "$(textb "UUID Found:") $(textb "$uuid")"
                     
-                    if [[ "$sda_in_fstab" == "1" ]]; then
-                        echo "$(textb "$partition not found in /etc/fstab")"
-                        echo "$(textb "Finding UUID for ") $(textb "$partition")"
-                        uuid="$(blkid $partition | awk '{print $2}' | cut -d'"' -f2)"
-                        echo "$(textb "UUID Found:") $(textb "$uuid")"
-                        
-                        apply_ssd_settings $uuid
-                    else
-                        apply_ssd_settings $partition
-                    fi
-                ;;
-                [nN]* )
-                    echo "$(greenb "OK") $(textb "Resuming without application changes..")"
-                    break
-                ;;
-                * )
-                    echo "$(textb "Please answer Y/y/n/N")"
-                ;;
-            esac
-        done
+                    apply_ssd_settings $uuid
+                else
+                    apply_ssd_settings $partition
+                fi
+            ;;
+            [nN]* )
+                echo "$(greenb "OK") $(textb "Resuming without application changes..")"
+            ;;
+            * )
+                echo "$(textb "Please answer Y/y/n/N")"
+                ssd_check
+            ;;
+        esac
     fi
 }
 
@@ -198,9 +209,16 @@ apply_ssd_settings () {
 
 # install gnome shell extensions
 gnome_shell_ext () {
+    running_path
     if [[ ! "$(pgrep -f gnome | wc -l)" == "0"  ]]; then
         echo "$(textb "Installing Gnome Extensions")"
-        bash tools/gnome-shell-extension-installer $1 --restart-shell
+        su - $user -c "bash $current_path/tools/gnome-shell-extension-installer $1 --restart-shell 2> /dev/null"
     fi
+}
+
+# Current running path
+running_path () {
+    current_path=`pwd`
+    export $current_path
 }
 

@@ -13,12 +13,13 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
+cat includes/banner
+echo "$(textb "First Step Installation Script Version:") $(textb "$version")"
+echo "$(textb "Installation starting please wait.")"
+sleep 3
+
 # create user if not exists
 create_user
-
-cat includes/banner
-
-echo "$(textb "First Step Installation Script Version:") $(textb "$version")"
 
 # Detecting OS 
 find_os
@@ -27,7 +28,8 @@ echo "$(textb "Operation System: ")$(textb "$os")"
 # if os debian found use apt-get update command
 update_repo
 
-packages=(`cat "settings/packages"`)
+# Install packages from settings/packages
+readarray packages < "settings/packages"
 
 # if array is not empty
 if [ ! -z "$packages" ]; then
@@ -38,6 +40,9 @@ if [ ! -z "$packages" ]; then
             install_package "$pack"
         fi
     done
+    # After installation complate, upgrade debian
+    # packages
+    upgrade_repo
 fi
 
 # Apply custom keyboard shortcuts settings from settings/keyboard_shortcuts

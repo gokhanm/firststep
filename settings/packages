@@ -4,7 +4,9 @@ chromium
 hexchat
 keepassx
 vim
-gvim
+vim-gtk
 xpad
 git
 curl
+python3-pip
+python3-dev
