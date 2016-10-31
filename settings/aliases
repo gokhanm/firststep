@@ -1,0 +1,5 @@
+# You can write all bash aliases here
+# Per line must be one alias
+# You have to separate username and alias with "|"
+# for user ---- alias
+root|guncelle='apt-get update && apt-get -y upgrade && apt-get -y dist-upgrade'

@@ -244,3 +244,27 @@ restart_system () {
         esac
     done
 }
+
+# Bash aliases function 
+# ~/.bash_aliases
+bash_aliases () {
+    readarray aliases < "settings/aliases"
+    if [ ! -z "$aliases" ]; then
+        for alias in "${aliases[@]}"
+        do
+            if [[ ! "$alias" == "#"* ]]; then
+                if  [[ ! "$alias" == "source"* ]]; then 
+                    user="$(echo $alias | cut -d'|' -f1)"
+                    user_alias="$(echo $alias | cut -d'|' -f2)"
+                    
+                    if [[ "$user" == "root" ]];then
+                        echo "alias $user_alias" >> ~/.bash_aliases
+                    else
+                        echo "alias $user_alias" >> /home/$user/.bash_aliases
+                        chown $user:$user /home/$user/.bash_aliases
+                    fi
+                fi
+            fi
+        done
+    fi
+}

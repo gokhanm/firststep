@@ -72,5 +72,8 @@ if [ ! -z "$extensions" ]; then
     done
 fi
 
+# root and user bash aliases
+bash_aliases
+
 # Installation Complete. Ask for restart the system
 restart_system
