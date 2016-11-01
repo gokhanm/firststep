@@ -1,4 +1,7 @@
 #!/bin/bash
+# All first step installation functions
+
+tmp="/tmp/firststep"
 
 # text bold color terminal output
 textb() {
@@ -267,4 +270,47 @@ bash_aliases () {
             fi
         done
     fi
+}
+
+# Dotfiles function
+dot_files () {
+    readarray dotfiles < "settings/dotfiles"
+    
+    if [ ! -z "$dotfiles" ]; then
+        for dotfile in "${dotfiles[@]}"
+        do
+            if [[ ! "$dotfile" == "#"* ]]; then
+                duser="$(echo $dotfile | cut -d'|' -f1)"
+                orj_path="$(echo $dotfile | cut -d'|' -f2)"
+                back_path="$(echo $dotfile | cut -d'|' -f3)"
+                
+                if [ -z "$duser" ]; then
+                    duser=$user
+                fi
+                
+                last=${back_path##*/}   
+                new_name=".$last"
+                
+                download_file $back_path $new_name
+                
+                echo "$(textb "Moving to") $(textb "$orj_path")"
+                new_path="$tmp/$new_name"
+                
+                su - $duser -c "mv $new_path $orj_path"
+            fi
+        done
+    fi
+}
+
+# Download given file to tmp folder
+download_file () {
+    back_path=$1
+    new_name=$2
+    
+    if [ ! -d "$tmp" ];then
+        mkdir $tmp
+    fi
+      
+    echo "$(textb "Downloading file:") $(textb $last)"
+    curl $1 -# --output $tmp/$new_name    
 }

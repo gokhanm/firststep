@@ -75,5 +75,8 @@ fi
 # root and user bash aliases
 bash_aliases
 
+# User dotfiles files
+dot_files
+
 # Installation Complete. Ask for restart the system
 restart_system
