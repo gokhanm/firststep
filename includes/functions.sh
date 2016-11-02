@@ -314,3 +314,37 @@ download_file () {
     echo "$(textb "Downloading file:") $(textb $last)"
     curl $1 -# --output $tmp/$new_name    
 }
+
+# Clone or create path in to the ~/.vim/ folder
+vim_settings () {
+    readarray vimsets < "settings/vim_settings"
+    
+    if [ ! -z "$vimsets" ]; then
+        for vimset in "${vimsets[@]}"
+        do
+            if [[ ! "$vimset" == "#"* ]]; then
+                rule="$(echo $vimset | cut -d'|' -f1)"
+                path="$(echo $vimset | cut -d'|' -f2)"
+                
+                if [[ "$rule" == "path" ]]; then
+                    if [ ! -d "$path" ]; then
+                        echo "$(textb "Creating path") $(text "$path")"
+                        mkdir -p $path
+                        sleep 1
+                    fi
+                elfi [[ "$rule" == "clone" ]]; then
+                    git_clone="$(echo $vimset | cut -d'|' -f3)"
+                    
+                    if [ ! -z "$git_clone" ];then                   
+                        echo "$(textb "Cloning to") $(text "$path")"
+                        git clone $git_clone $path
+                        sleep 1
+                    else
+                        echo "$(redb "ERROR") $(textb "Cloning path not found in settings/vim_settings")"
+                        exit 1
+                    fi
+                fi
+            fi
+        done
+    fi
+}

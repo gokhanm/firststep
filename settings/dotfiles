@@ -1,0 +1,6 @@
+# You can add your dot files here
+# Http or backup path supported
+# If user area is empty, default settings/user used
+# User|First Orjinal Path|Http or backup path
+root|~/.vimrc|https://raw.githubusercontent.com/gokhanm/dotfiles/master/vim/vimrc
+|~/.vimrc|https://raw.githubusercontent.com/gokhanm/dotfiles/master/vim/vimrc

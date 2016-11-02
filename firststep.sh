@@ -63,6 +63,7 @@ ssd_check
 
 # Gnome shell extensions installation from settings/extensions
 readarray extensions < "settings/extensions"
+
 if [ ! -z "$extensions" ]; then
     for ext_id in "${extensions[@]}"
     do
@@ -77,6 +78,9 @@ bash_aliases
 
 # User dotfiles files
 dot_files
+
+# User vim folder settings
+vim_settings
 
 # Installation Complete. Ask for restart the system
 restart_system
