@@ -4,3 +4,4 @@
 # User|First Orjinal Path|Http or backup path
 root|~/.vimrc|https://raw.githubusercontent.com/gokhanm/dotfiles/master/vim/vimrc
 |~/.vimrc|https://raw.githubusercontent.com/gokhanm/dotfiles/master/vim/vimrc
+|~/.gitconfig|https://raw.githubusercontent.com/gokhanm/dotfiles/master/git/gitconfig

@@ -288,10 +288,12 @@ dot_files () {
                     duser=$user
                 fi
                 
-                last=${back_path##*/}   
-                new_name=".$last"
+                last=${back_path##*/}
+                # I think no need to change name
+                # because we move the file to new path 
+                # new_name=".$last"
                 
-                download_file $back_path $new_name
+                download_file $back_path $last
                 
                 echo "$(textb "Moving to") $(textb "$orj_path")"
                 new_path="$tmp/$new_name"
