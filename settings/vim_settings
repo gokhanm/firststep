@@ -2,19 +2,31 @@
 # if you want to clone line starts with clone
 # for path line starts with path 
 # separating with "|"
-# first path or clone
-# second for path you want to create path
+# first for user if empty applying for settings/user
+# second path or clone
+# third for path you want to create path
 # for clone you want to clone in path
-# third for clone only. git clone url
-path|~/.vim/bundle
-path|~/.vim/backups
-path|~/.vim/colors
-path|~/.vim/swaps
-path|~/.vim/undos
-clone|~/.vim/bundle|https://github.com/scrooloose/nerdtree.git
-clone|~/.vim/bundle|https://github.com/majutsushi/tagbar.git
-clone|~/.vim/bundle|https://github.com/vim-airline/vim-airline.git
-clone|~/.vim/bundle|https://github.com/vim-airline/vim-airline.git
-clone|~/.vim/bundle|https://github.com/tpope/vim-fugitive.git
-clone|~/.vim/bundle|https://github.com/airblade/vim-gitgutter.git
-clone|~/.vim/bundle|https://github.com/gmarik/Vundle.vim.git
+# fourth for clone only. git clone url
+|path|~/.vim/bundle
+|path|~/.vim/backups
+|path|~/.vim/colors
+|path|~/.vim/swaps
+|path|~/.vim/undos
+|clone|~/.vim/bundle|https://github.com/scrooloose/nerdtree.git
+|clone|~/.vim/bundle|https://github.com/majutsushi/tagbar.git
+|clone|~/.vim/bundle|https://github.com/vim-airline/vim-airline.git
+|clone|~/.vim/bundle|https://github.com/tpope/vim-fugitive.git
+|clone|~/.vim/bundle|https://github.com/airblade/vim-gitgutter.git
+|clone|~/.vim/bundle|https://github.com/gmarik/Vundle.vim.git
+# for root
+root|path|~/.vim/bundle
+root|path|~/.vim/backups
+root|path|~/.vim/colors
+root|path|~/.vim/swaps
+root|path|~/.vim/undos
+root|clone|~/.vim/bundle|https://github.com/scrooloose/nerdtree.git
+root|clone|~/.vim/bundle|https://github.com/majutsushi/tagbar.git
+root|clone|~/.vim/bundle|https://github.com/vim-airline/vim-airline.git
+root|clone|~/.vim/bundle|https://github.com/tpope/vim-fugitive.git
+root|clone|~/.vim/bundle|https://github.com/airblade/vim-gitgutter.git
+root|clone|~/.vim/bundle|https://github.com/gmarik/Vundle.vim.git

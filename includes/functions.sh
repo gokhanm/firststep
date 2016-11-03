@@ -237,7 +237,7 @@ gnome_shell_ext () {
         do
             if [[ ! "$ext_id" == "#"* ]]; then
                 if [[ ! "$(pgrep -f gnome | wc -l)" == "0"  ]]; then
-                    echo "$(textb "Installing Gnome Extensions")"
+                    echo "$(textb "Installing Gnome Extensions") $(textb "$ext_id")"
                     su - $user -c "bash $current_path/tools/gnome-shell-extension-installer $ext_id --restart-shell 2> /dev/null"
                 fi
             
@@ -320,12 +320,18 @@ dot_files () {
                 # new_name=".$last"
                 
                 download_file $back_path $last
-                
-                echo "$(textb "Moving to") $(textb "$orj_path")"
+                                               
                 new_path="$tmp/$new_name"
                 
-                su - $duser -c "mv $new_path $orj_path"
+                su - $duser -c "cp $new_path $orj_path"
+                if [ $? -eq 0 ];then
+                    echo "$(textb "Copying to") $(textb "$orj_path") $(textb "for $duser")"
+                else    
+                    echo "$(redb "Copying to") $(textb "$orj_path") $(textb "for $duser")"
+                    exit 1
+                fi                                          
             fi
+            unset $duser           
         done
     fi
 }
@@ -351,28 +357,32 @@ vim_settings () {
         for vimset in "${vimsets[@]}"
         do
             if [[ ! "$vimset" == "#"* ]]; then
-                rule="$(echo $vimset | cut -d'|' -f1)"
-                path="$(echo $vimset | cut -d'|' -f2)"
+                duser="$(echo $vimset | cut -d'|' -f1)"
+                rule="$(echo $vimset | cut -d'|' -f2)"
+                path="$(echo $vimset | cut -d'|' -f3)"
+                
+                if [ -z "$duser" ]; then
+                    duser=$user
+                fi                
                 
                 if [[ "$rule" == "path" ]]; then
-                    if [ ! -d "$path" ]; then
-                        echo "$(textb "Creating path") $(text "$path")"
-                        mkdir -p $path
-                        sleep 1
-                    fi
-                elfi [[ "$rule" == "clone" ]]; then
-                    git_clone="$(echo $vimset | cut -d'|' -f3)"
+                    #    echo "$(textb "Creating path") $(textb "$path") $(textb "for $duser")"
+                    su - $duser -c "if [ ! -d "$path" ]; then mkdir -p $path; fi"
+                    sleep 1
+                elif [[ "$rule" == "clone" ]]; then
+                    git_clone="$(echo $vimset | cut -d'|' -f4)"
                     
                     if [ ! -z "$git_clone" ];then                   
-                        echo "$(textb "Cloning to") $(text "$path")"
-                        git clone $git_clone $path
+                        echo "$(textb "Cloning to") $(textb "$path") $(textb "for $duser")"
+                        su - $duser -c "cd $path && git clone $git_clone"
                         sleep 1
                     else
                         echo "$(redb "ERROR") $(textb "Cloning path not found in settings/vim_settings")"
                         exit 1
                     fi
                 fi
-            fi
+            fi      
+            unset $duser
         done
     fi
 }

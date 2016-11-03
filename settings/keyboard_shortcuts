@@ -1,2 +1,2 @@
 #name ---- shortcut
-show-desktop ['<Control><Alt>d']
+show-desktop "['<Control><Alt>d']"
