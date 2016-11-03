@@ -78,44 +78,60 @@ upgrade_repo () {
     fi
 }
 
-# Install Package Function
+# Install Package Function from settings/install
 install_package () {
-    echo "$(textb "Installing Package: ") $(textb "$1")"
-    if [[ "$os" == "Debian" ]]; then
-        apt-get install -y $1
-        if [ $? -eq 0 ]; then
-            echo "$(greenb "OK") $(textb "Installation complate: $1")"
-        else
-            echo "$(redb "ERROR") $(textb "Installation not complate: $1")"
-            exit 1
-        fi
-    elif [[ "$os" == "CentOS" ]] || [[ "$os" == "Redhat" ]]; then
-        yum install -y $1
-        if [ $? -eq 0 ]; then
-            echo "$(greenb "OK") $(textb "Installation complate: $1")"
-        else
-            echo "$(redb "ERROR") $(textb "Installation not complate: $1")"
-            exit 1
-        fi
+    readarray packages < "settings/packages"
+    
+    if [ ! -z "$packages" ]; then
+        for pack in "${packages[@]}"
+        do
+            if [[ ! "$pack" == "#"* ]]; then
+                echo "$(textb "Installing Package: ") $(textb "$pack")"    
+                if [[ "$os" == "Debian" ]]; then
+                    apt-get install -y $pack
+                    if [ $? -eq 0 ]; then
+                        echo "$(greenb "OK") $(textb "Installation complate: $pack")"
+                    else
+                        echo "$(redb "ERROR") $(textb "Installation not complate: $pack")"
+                        exit 1
+                    fi
+                elif [[ "$os" == "CentOS" ]] || [[ "$os" == "Redhat" ]]; then
+                    yum install -y $pack
+                    if [ $? -eq 0 ]; then
+                        echo "$(greenb "OK") $(textb "Installation complate: $pack")"
+                    else
+                        echo "$(redb "ERROR") $(textb "Installation not complate: $pack")"
+                        exit 1
+                    fi                    
+                fi                   
+            fi
+        done
     fi
 }
 
 # Apply keyboard shortcut settings from settings/keyboard_shortcuts
 keyboard_shortcut () {
-    name=$1
-    key=$2
+    readarray shortcuts < "settings/keyboard_shortcuts"
 
-    if [[ ! "$(pgrep -f gnome | wc -l)" == 0  ]]; then
-        if [[ "$(gnome-shell --version | awk '{print $3 }' | cut -d'.' -f1)" == "3"* ]]; then
-            echo "$(textb "Desktop Environment Found: ") $(textb "Gnome 3")"
-            su - $user -c "gsettings set org.gnome.desktop.wm.keybindings $1 \"$2\""
-            if [ $? -eq 0 ];then
-                echo "$(greenb "OK") $(textb "Keyboard shortcut added: $1 $2")"
-            else    
-                echo "$(redb "ERROR") $(textb "Keyboard shortcut not added: $1 $2")"
-                exit 1
+    if [ ! -z "$shortcuts" ]; then
+        for key in "${shortcuts[@]}"
+        do
+            if [[ ! "$key" == "#"* ]];then
+                if [[ ! "$(pgrep -f gnome | wc -l)" == 0  ]]; then
+                    if [[ "$(gnome-shell --version | awk '{print $3 }' | cut -d'.' -f1)" == "3"* ]]; then
+                        echo "$(textb "Desktop Environment Found: ") $(textb "Gnome 3")"
+                        #su - $user -c "gsettings set org.gnome.desktop.wm.keybindings $1 \"$2\""
+                        su - $user -c "gsettings set org.gnome.desktop.wm.keybindings $key"
+                        if [ $? -eq 0 ];then
+                            echo "$(greenb "OK") $(textb "Keyboard shortcut added: $key")"
+                        else    
+                            echo "$(redb "ERROR") $(textb "Keyboard shortcut not added: $key")"
+                            exit 1
+                        fi
+                    fi  
+                fi
             fi
-        fi
+        done
     fi
 }
 
@@ -214,9 +230,19 @@ apply_ssd_settings () {
 # install gnome shell extensions
 gnome_shell_ext () {
     running_path
-    if [[ ! "$(pgrep -f gnome | wc -l)" == "0"  ]]; then
-        echo "$(textb "Installing Gnome Extensions")"
-        su - $user -c "bash $current_path/tools/gnome-shell-extension-installer $1 --restart-shell 2> /dev/null"
+    readarray extensions < "settings/extensions"
+
+    if [ ! -z "$extensions" ]; then
+        for ext_id in "${extensions[@]}"    
+        do
+            if [[ ! "$ext_id" == "#"* ]]; then
+                if [[ ! "$(pgrep -f gnome | wc -l)" == "0"  ]]; then
+                    echo "$(textb "Installing Gnome Extensions")"
+                    su - $user -c "bash $current_path/tools/gnome-shell-extension-installer $ext_id --restart-shell 2> /dev/null"
+                fi
+            
+            fi
+        done
     fi
 }
 
