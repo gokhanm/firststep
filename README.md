@@ -11,16 +11,16 @@ You have to write the username in the settings/user. Functions uses this usernam
     $ ./firststep.sh
 ```
 
-# Gnome Version Tested
+# Desktop Environment Tested
 
-| Gitlab version | Status |
-|:-------------:| :-----:|
-| 3.22.x      | :heavy_check_mark: |
-| 3.14.x      | :heavy_check_mark: |
+| Desktop Environment | Version |       Status       |
+|:-------------------:|:-------:|:------------------:|
+| Gnome               | 3.22.x  | :heavy_check_mark: |
+|                     | 3.14.x  | :heavy_check_mark: |
 
-# OS Tested
+# Operating System Tested
 
-| Operating System | Version | Status |
-|:-------------:| :-----:|:---------:|
-| Debian  | Stretch | :heavy_check_mark: |
-|  |8 ( Jessie ) | :heavy_check_mark: |
+| Operating System |   Version    |      Status        |
+|:----------------:|:------------:|:------------------:|
+| Debian           | Stretch      | :heavy_check_mark: |
+|                  | 8 ( Jessie ) | :heavy_check_mark: |
