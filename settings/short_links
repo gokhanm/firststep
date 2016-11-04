@@ -1,0 +1,5 @@
+# short link settings
+# seperated with "|"
+# first full path target 
+# second full path link
+/usr/bin/gnome-terminal|/usr/bin/terminal

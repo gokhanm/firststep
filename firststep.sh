@@ -53,5 +53,8 @@ dot_files
 # User vim folder settings
 vim_settings
 
+# Short links 
+short_links
+
 # Installation Complete. Ask for restart the system
 restart_system

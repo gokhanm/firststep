@@ -398,3 +398,28 @@ vim_settings () {
         done
     fi
 }
+
+# Short links function
+short_links () {
+    readarray short_links < "settings/short_links"
+    
+    if [ ! -z "$short_links" ]; then
+        for link in "${short_links[@]}"
+        do
+            if [[ ! "$link" == "#"* ]]; then
+                target="$(echo $link | cut -d'|' -f1)"
+                slink="$(echo $link | cut -d'|' -f2)"
+                
+                ln -s $target $slink
+                
+                if [ $? -eq 0 ];then
+                    echo "$(textb "Creating short link") $(textb "$target") $(textb "to $slink")"
+                else    
+                    echo "$(redb "Creating short link") $(textb "$target") $(textb "to $slink")"
+                    exit 1
+                fi                   
+            fi
+        done
+    fi        
+}
+
