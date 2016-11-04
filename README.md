@@ -5,7 +5,7 @@ settings. You can edit files in the settings folder. Otherwise my personal setti
 
 You have to write the username in the settings/user. Functions uses this username for installation.
 
-# Run
+# Usage
 ```bash
     $ chmod +x firststep.sh
     $ ./firststep.sh

@@ -3,7 +3,7 @@
 # for path line starts with path 
 # separating with "|"
 # first for user if empty applying for settings/user
-# second path or clone
+# second path, clone or copy
 # third for path you want to create path
 # for clone you want to clone in path
 # fourth for clone only. git clone url
@@ -17,7 +17,7 @@
 |clone|~/.vim/bundle|https://github.com/tpope/vim-fugitive.git
 |clone|~/.vim/bundle|https://github.com/airblade/vim-gitgutter.git
 |clone|~/.vim/bundle|https://github.com/gmarik/Vundle.vim.git
-|clone|~/.vim|https://github.com/blueshirts/darcula.git
+|copy|~/.vim/colors|https://raw.githubusercontent.com/blueshirts/darcula/master/colors/darcula.vim
 # for root
 root|path|~/.vim/bundle
 root|path|~/.vim/backups
@@ -29,4 +29,4 @@ root|clone|~/.vim/bundle|https://github.com/vim-airline/vim-airline.git
 root|clone|~/.vim/bundle|https://github.com/tpope/vim-fugitive.git
 root|clone|~/.vim/bundle|https://github.com/airblade/vim-gitgutter.git
 root|clone|~/.vim/bundle|https://github.com/gmarik/Vundle.vim.git
-root|clone|~/.vim|https://github.com/blueshirts/darcula.git
+root|copy|~/.vim/colors|https://raw.githubusercontent.com/blueshirts/darcula/master/colors/darcula.vim

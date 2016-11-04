@@ -281,10 +281,10 @@ bash_aliases () {
         do
             if [[ ! "$alias" == "#"* ]]; then
                 if  [[ ! "$alias" == "source"* ]]; then 
-                    user="$(echo $alias | cut -d'|' -f1)"
+                    duser="$(echo $alias | cut -d'|' -f1)"
                     user_alias="$(echo $alias | cut -d'|' -f2)"
                     
-                    if [[ "$user" == "root" ]];then
+                    if [[ "$duser" == "root" ]];then
                         check_bash_aliases "/root/.bashrc"
                         echo "alias $user_alias" >> ~/.bash_aliases
                     else
@@ -294,6 +294,7 @@ bash_aliases () {
                     fi
                 fi
             fi
+            unset $duser
         done
     fi
 }
@@ -325,9 +326,7 @@ dot_files () {
                 fi
                 
                 last=${back_path##*/}
-                # I think no need to change name
-                # because we move the file to new path 
-                # new_name=".$last"
+                new_name=".$last"
                 
                 download_file $back_path $last
                                                
@@ -375,6 +374,7 @@ vim_settings () {
                 duser="$(echo $vimset | cut -d'|' -f1)"
                 rule="$(echo $vimset | cut -d'|' -f2)"
                 path="$(echo $vimset | cut -d'|' -f3)"
+                url="$(echo $vimset | cut -d'|' -f4)"
                 
                 if [ -z "$duser" ]; then
                     duser=$user
@@ -384,19 +384,17 @@ vim_settings () {
                     #    echo "$(textb "Creating path") $(textb "$path") $(textb "for $duser")"
                     su - $duser -c "if [ ! -d "$path" ]; then mkdir -p $path; fi"
                     sleep 1
-                elif [[ "$rule" == "clone" ]]; then
-                    git_clone="$(echo $vimset | cut -d'|' -f4)"
+                elif [[ "$rule" == "clone" ]]; then                                                        
+                    if [ ! -z "$url" ];then     
                     
-                    if [ ! -z "$git_clone" ];then     
-                    
-                        repo_name=${git_clone##*/}
+                        repo_name=${url##*/}
                         repo_folder_name=${repo_name%.*}
                         
-                        su - $duser -c "[ -d $path/$repo_folder_name ] && echo '1' > $tmp/folder_found || echo '0' > $tmp/folder_found"
+                        su - $user -c "[ -d $path/$repo_folder_name ] && echo '1' > $tmp/folder_found || echo '0' > $tmp/folder_found"
                         
                         if [ "$(cat $tmp/folder_found)" -eq 0 ]; then
                             echo "$(textb "Cloning to") $(textb "$path") $(textb "for $duser")"
-                            su - $duser -c "cd $path && git clone $git_clone"
+                            su - $duser -c "cd $path && git clone $url"
                             sleep 1
                         else
                             echo "$(greenb "INFO") $(textb "Folder") $(textb "$repo_folder_name") $(textb "for $duser found passing...")"
@@ -405,6 +403,18 @@ vim_settings () {
                         echo "$(redb "ERROR") $(textb "Cloning path not found in settings/vim_settings")"
                         exit 1
                     fi
+                elif [[ "$rule" == "copy" ]]; then
+                    last=${url##*/}
+                    download_file $url $last
+                    new_path="$tmp/$last"
+                    
+                    su - $duser -c "cp $new_path $path"
+                    if [ $? -eq 0 ];then
+                        echo "$(textb "Copying to") $(textb "$path") $(textb "for $duser")"
+                    else    
+                        echo "$(redb "Copying to") $(textb "$path") $(textb "for $duser")"
+                        exit 1
+                    fi                                                              
                 fi
             fi      
             unset $duser
@@ -423,14 +433,19 @@ short_links () {
                 target="$(echo $link | cut -d'|' -f1)"
                 slink="$(echo $link | cut -d'|' -f2)"
                 
-                ln -s $target $slink
-                
-                if [ $? -eq 0 ];then
-                    echo "$(textb "Creating short link") $(textb "$target") $(textb "to $slink")"
-                else    
-                    echo "$(redb "Creating short link") $(textb "$target") $(textb "to $slink")"
-                    exit 1
-                fi                   
+                if [ ! -L $slink ]; then
+               
+                    ln -s $target $slink
+                    
+                    if [ $? -eq 0 ];then
+                        echo "$(textb "Creating short link") $(textb "$target") $(textb "to $slink")"
+                    else    
+                        echo "$(redb "ERROR") $(textb "Creating short link") $(textb "$target") $(textb "to $slink")"
+                        exit 1
+                    fi
+                else
+                    echo "$(greenb "INFO") $(textb "Short Link") $(textb "$slink") $(textb "found passing...")"
+                fi              
             fi
         done
     fi        
