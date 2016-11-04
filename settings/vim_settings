@@ -9,7 +9,6 @@
 # fourth for clone only. git clone url
 |path|~/.vim/bundle
 |path|~/.vim/backups
-|path|~/.vim/colors
 |path|~/.vim/swaps
 |path|~/.vim/undos
 |clone|~/.vim/bundle|https://github.com/scrooloose/nerdtree.git
@@ -18,10 +17,10 @@
 |clone|~/.vim/bundle|https://github.com/tpope/vim-fugitive.git
 |clone|~/.vim/bundle|https://github.com/airblade/vim-gitgutter.git
 |clone|~/.vim/bundle|https://github.com/gmarik/Vundle.vim.git
+|clone|~/.vim|https://github.com/blueshirts/darcula.git
 # for root
 root|path|~/.vim/bundle
 root|path|~/.vim/backups
-root|path|~/.vim/colors
 root|path|~/.vim/swaps
 root|path|~/.vim/undos
 root|clone|~/.vim/bundle|https://github.com/scrooloose/nerdtree.git
@@ -30,3 +29,4 @@ root|clone|~/.vim/bundle|https://github.com/vim-airline/vim-airline.git
 root|clone|~/.vim/bundle|https://github.com/tpope/vim-fugitive.git
 root|clone|~/.vim/bundle|https://github.com/airblade/vim-gitgutter.git
 root|clone|~/.vim/bundle|https://github.com/gmarik/Vundle.vim.git
+root|clone|~/.vim|https://github.com/blueshirts/darcula.git

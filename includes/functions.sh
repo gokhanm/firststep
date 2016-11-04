@@ -287,14 +287,26 @@ bash_aliases () {
                     user_alias="$(echo $alias | cut -d'|' -f2)"
                     
                     if [[ "$user" == "root" ]];then
+                        check_bash_aliases "~/.bash_aliases"
                         echo "alias $user_alias" >> ~/.bash_aliases
                     else
+                        check_bash_aliases "/home/$user/.bash_aliases"
                         echo "alias $user_alias" >> /home/$user/.bash_aliases
                         chown $user:$user /home/$user/.bash_aliases
                     fi
                 fi
             fi
         done
+    fi
+}
+
+# Add bash_aliases source if not found in bashrc
+check_bash_aliases () {
+
+    bash_aliases="$(test $(grep "~/.bash_aliases" $1 | wc -l) -gt 0; echo $?)"
+    
+    if [[ "$bash_aliases" == "1" ]]; then
+        echo "[ -f ~/.bash_aliases ] && . ~/.bash_aliases" >> $1
     fi
 }
 
