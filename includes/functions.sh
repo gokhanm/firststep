@@ -287,10 +287,10 @@ bash_aliases () {
                     user_alias="$(echo $alias | cut -d'|' -f2)"
                     
                     if [[ "$user" == "root" ]];then
-                        check_bash_aliases "~/.bash_aliases"
+                        check_bash_aliases "/root/.bashrc"
                         echo "alias $user_alias" >> ~/.bash_aliases
                     else
-                        check_bash_aliases "/home/$user/.bash_aliases"
+                        check_bash_aliases "/home/$user/.bashrc"
                         echo "alias $user_alias" >> /home/$user/.bash_aliases
                         chown $user:$user /home/$user/.bash_aliases
                     fi
