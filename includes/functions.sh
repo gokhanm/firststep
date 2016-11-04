@@ -382,7 +382,7 @@ vim_settings () {
                 
                 if [[ "$rule" == "path" ]]; then
                     #    echo "$(textb "Creating path") $(textb "$path") $(textb "for $duser")"
-                    su - $duser -c "if [ ! -d "$path" ]; then mkdir -p $path; fi"
+                    su - $duser -c "[ ! -d "$path" ] && mkdir -p $path"
                     sleep 1
                 elif [[ "$rule" == "clone" ]]; then                                                        
                     if [ ! -z "$url" ];then     
@@ -407,6 +407,8 @@ vim_settings () {
                     last=${url##*/}
                     download_file $url $last
                     new_path="$tmp/$last"
+                    
+                    su - $duser -c "[ ! -d $path ] && mkdir -p $path"
                     
                     su - $duser -c "cp $new_path $path"
                     if [ $? -eq 0 ];then

@@ -11,6 +11,7 @@
 |path|~/.vim/backups
 |path|~/.vim/swaps
 |path|~/.vim/undos
+|path|~/.vim/colors
 |clone|~/.vim/bundle|https://github.com/scrooloose/nerdtree.git
 |clone|~/.vim/bundle|https://github.com/majutsushi/tagbar.git
 |clone|~/.vim/bundle|https://github.com/vim-airline/vim-airline.git
@@ -23,6 +24,7 @@ root|path|~/.vim/bundle
 root|path|~/.vim/backups
 root|path|~/.vim/swaps
 root|path|~/.vim/undos
+root|path|~/.vim/colors
 root|clone|~/.vim/bundle|https://github.com/scrooloose/nerdtree.git
 root|clone|~/.vim/bundle|https://github.com/majutsushi/tagbar.git
 root|clone|~/.vim/bundle|https://github.com/vim-airline/vim-airline.git
