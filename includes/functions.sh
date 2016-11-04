@@ -1,8 +1,6 @@
 #!/bin/bash
 # All first step installation functions
 
-tmp="/tmp/firststep"
-
 # text bold color terminal output
 textb() {
 	echo $(tput bold)${1}$(tput sgr0);
@@ -354,7 +352,7 @@ download_file () {
     new_name=$2
     
     if [ ! -d "$tmp" ];then
-        mkdir $tmp
+        su - $user -c "mkdir $tmp"
     fi
       
     echo "$(textb "Downloading file:") $(textb $last)"
@@ -363,6 +361,11 @@ download_file () {
 
 # Clone or create path in to the ~/.vim/ folder
 vim_settings () {
+    # 0: folder not found
+    # 1: folder found
+    # if file created by root the user takes permission error
+    su - $user -c "echo '0' > $tmp/folder_found"
+    
     readarray vimsets < "settings/vim_settings"
     
     if [ ! -z "$vimsets" ]; then
@@ -384,10 +387,20 @@ vim_settings () {
                 elif [[ "$rule" == "clone" ]]; then
                     git_clone="$(echo $vimset | cut -d'|' -f4)"
                     
-                    if [ ! -z "$git_clone" ];then                   
-                        echo "$(textb "Cloning to") $(textb "$path") $(textb "for $duser")"
-                        su - $duser -c "cd $path && git clone $git_clone"
-                        sleep 1
+                    if [ ! -z "$git_clone" ];then     
+                    
+                        repo_name=${git_clone##*/}
+                        repo_folder_name=${repo_name%.*}
+                        
+                        su - $duser -c "[ -d $path/$repo_folder_name ] && echo '1' > $tmp/folder_found || echo '0' > $tmp/folder_found"
+                        
+                        if [ "$(cat $tmp/folder_found)" -eq 0 ]; then
+                            echo "$(textb "Cloning to") $(textb "$path") $(textb "for $duser")"
+                            su - $duser -c "cd $path && git clone $git_clone"
+                            sleep 1
+                        else
+                            echo "$(greenb "INFO") $(textb "Folder") $(textb "$repo_folder_name") $(textb "for $duser found passing...")"
+                        fi
                     else
                         echo "$(redb "ERROR") $(textb "Cloning path not found in settings/vim_settings")"
                         exit 1

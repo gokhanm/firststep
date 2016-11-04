@@ -21,6 +21,10 @@ sleep 3
 # create user if not exists
 create_user
 
+# create tmp folder
+export tmp="/tmp/firststep"
+su - $user -c "mkdir $tmp"
+
 # Detecting OS 
 find_os
 echo "$(textb "Operation System: ")$(textb "$os")"
