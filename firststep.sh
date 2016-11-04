@@ -23,7 +23,7 @@ create_user
 
 # create tmp folder
 export tmp="/tmp/firststep"
-su - $user -c "mkdir $tmp"
+[ ! -d $tmp ] && su - $user -c "mkdir -p $tmp"
 
 # Detecting OS 
 find_os
