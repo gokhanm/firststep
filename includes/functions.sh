@@ -455,37 +455,40 @@ short_links () {
 
 # Tweak Settings Function
 tweak_settings () {
-    readarray tweak_settings < "settings/tweak_settings"
-    
-    if [ ! -z "$tweak_settings" ]; then
-        for ts in "${tweak_settings[@]}"
-        do
-            if [[ ! "$ts" == "#"* ]]; then
-                schema_name="$(echo $ts | cut -d'|' -f1)"
+    # for Gnome Tweak Tool
+    if [[ ! "$(pgrep -f gnome | wc -l)" == "0"  ]]; then  
+        readarray tweak_settings < "settings/tweak_settings"
+        
+        if [ ! -z "$tweak_settings" ]; then
+            for ts in "${tweak_settings[@]}"
+            do
+                if [[ ! "$ts" == "#"* ]]; then
+                    schema_name="$(echo $ts | cut -d'|' -f1)"
+                    
+                    if [[ "$schema_name" == "desktop.interface" ]]; then
+                        schema="org.gnome.desktop.interface"
+                    elif [[ "$schema_name" == "nautilus.desktop" ]]; then
+                        schema="org.gnome.nautilus.desktop"
+                    elif [[ "$schema_name" == "desktop.background" ]]; then
+                        schema="org.gnome.nautilus.desktop"
+                    elif [[ "$schema_name" == "desktop.wm.preferences" ]]; then
+                        schema="org.gnome.desktop.wm.preferences"
+                    elif [[ "$schema_name" == "mutter" ]];then
+                        schema="org.gnome.mutter"
+                    fi   
+              
+                    key="$(echo $ts | cut -d'|' -f2)"
+                    value="$(echo $ts | cut -d'|' -f3)"
                 
-                if [[ "$schema_name" == "desktop.interface" ]]; then
-                    schema="org.gnome.desktop.interface"
-                elif [[ "$schema_name" == "nautilus.desktop" ]]; then
-                    schema="org.gnome.nautilus.desktop"
-                elif [[ "$schema_name" == "desktop.background" ]]; then
-                    schema="org.gnome.nautilus.desktop"
-                elif [[ "$schema_name" == "desktop.wm.preferences" ]]; then
-                    schema="org.gnome.desktop.wm.preferences"
-                elif [[ "$schema_name" == "mutter" ]];then
-                    schema="org.gnome.mutter"
-                fi   
-          
-                key="$(echo $ts | cut -d'|' -f2)"
-                value="$(echo $ts | cut -d'|' -f3)"
-            
-                su - $user -c "gsettings set $schema $key $value"
-                if [ $? -eq 0 ];then
-                    echo "$(textb "Applying tweak settings") $(textb "$key") $(textb ": $value")"
-                else    
-                    echo "$(redb "ERROR") $(textb "Applying tweak settings") $(textb "$key") $(textb ": $value")"
-                    exit 1
-                fi            
-            fi
-        done
+                    su - $user -c "gsettings set $schema $key $value"
+                    if [ $? -eq 0 ];then
+                        echo "$(textb "Applying tweak settings") $(textb "$key") $(textb ": $value")"
+                    else    
+                        echo "$(redb "ERROR") $(textb "Applying tweak settings") $(textb "$key") $(textb ": $value")"
+                        exit 1
+                    fi            
+                fi
+            done
+        fi
     fi
 }
