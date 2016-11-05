@@ -455,16 +455,15 @@ short_links () {
 
 # Tweak Settings Function
 tweak_settings () {
-    # for Gnome Tweak Tool
-    if [[ ! "$(pgrep -f gnome | wc -l)" == "0"  ]]; then  
-        readarray tweak_settings < "settings/tweak_settings"
-        
-        if [ ! -z "$tweak_settings" ]; then
-            for ts in "${tweak_settings[@]}"
-            do
-                if [[ ! "$ts" == "#"* ]]; then
-                    schema_name="$(echo $ts | cut -d'|' -f1)"
-                    
+    readarray tweak_settings < "settings/tweak_settings"
+    
+    if [ ! -z "$tweak_settings" ]; then
+        for ts in "${tweak_settings[@]}"
+        do
+            if [[ ! "$ts" == "#"* ]]; then
+                schema_name="$(echo $ts | cut -d'|' -f1)"
+                
+                if [[ ! "$(pgrep -f gnome | wc -l)" == "0"  ]]; then                
                     if [[ "$schema_name" == "desktop.interface" ]]; then
                         schema="org.gnome.desktop.interface"
                     elif [[ "$schema_name" == "nautilus.desktop" ]]; then
@@ -486,9 +485,9 @@ tweak_settings () {
                     else    
                         echo "$(redb "ERROR") $(textb "Applying tweak settings") $(textb "$key") $(textb ": $value")"
                         exit 1
-                    fi            
-                fi
-            done
-        fi
+                    fi
+                fi            
+            fi
+        done
     fi
 }
