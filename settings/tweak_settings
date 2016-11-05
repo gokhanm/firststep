@@ -1,0 +1,19 @@
+# Tweak Top Bar Settings
+# for Clock
+desktop.interface|clock-show-date|true
+desktop.interface|clock-show-seconds|true
+desktop.interface|show-weekdate|true
+# for Calendar
+desktop.calendar|show-weekdate|true
+# for Desktop
+nautilus.desktop|home-icon-visible|true
+nautilus.desktop|trash-icon-visible|true
+nautilus.desktop|volumes-visible|true
+# Show Desktop Icons
+desktop.background|show-desktop-icons|true
+# for Titlebar Buttons
+desktop.wm.preferences|button-layout|'appmenu:minimize,maximize,close'
+# for Workspaces
+# May be bug, commands not work Gnome v3.22.1, gsettings v2.50.1
+# mutter|workspaces-only-on-primary|true
+# mutter|dynamic-workspaces|true

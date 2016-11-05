@@ -60,5 +60,8 @@ vim_settings
 # Short links 
 short_links
 
+# Tweak Settings
+tweak_settings
+
 # Installation Complete. Ask for restart the system
 restart_system
