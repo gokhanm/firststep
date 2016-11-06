@@ -285,12 +285,23 @@ bash_aliases () {
                     user_alias="$(echo $alias | cut -d'|' -f2)"
                     
                     if [[ "$duser" == "root" ]];then
-                        check_bash_aliases "/root/.bashrc"
-                        echo "alias $user_alias" >> ~/.bash_aliases
+                        bashrc="/root/.bashrc"
+                        bash_aliases="~/.bash_aliases"
                     else
-                        check_bash_aliases "/home/$user/.bashrc"
-                        echo "alias $user_alias" >> /home/$user/.bash_aliases
-                        chown $user:$user /home/$user/.bash_aliases
+                        bashrc="/home/$user/.bashrc"
+                        bash_aliases="/home/$user/.bash_aliases"
+                    fi
+                    
+                    aliase_check="$(test $(grep "alias $user_alias" $bash_aliases | wc -l) -gt 0; echo $?)"
+                    
+                    if [[ "$aliase_check" == "1" ]]; then
+                        # i can use su command here. But double quotes gets problem in echo command
+                        # fix later
+                        echo "alias $user_alias" >> $bash_aliases
+                        
+                        if [[ -z "$duser" ]]; then
+                            chown $user:$user $bash_aliases
+                        fi
                     fi
                 fi
             fi
