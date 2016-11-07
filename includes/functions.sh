@@ -161,6 +161,8 @@ ssd_check () {
                 else
                     apply_ssd_settings $partition
                 fi
+                
+                ssd_trim_support
             ;;
             [nN]* )
                 echo "$(greenb "OK") $(textb "Resuming without applying ssd
@@ -500,5 +502,23 @@ tweak_settings () {
                 fi            
             fi
         done
+    fi
+}
+
+# if 
+ssd_trim_support () {
+    trim_support="$(test $(hdparm -I /dev/sda | grep "TRIM supported" | wc -l ) -gt 0; echo $?)"
+    
+    if [[ "$trim_support" == "0" ]]; then
+        cron_path="/etc/cron.daily/trim"
+        
+        cat > $cron_path <<\EOF
+#!/bin/sh
+LOG=/var/log/trim.log
+echo "* $(date -R) *" >> $LOG
+fstrim -v / >> $LOG
+fstrim -v /home >> $LOG
+EOF
+        chmod +x $cron_path
     fi
 }
