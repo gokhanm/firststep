@@ -1,0 +1,19 @@
+# Apps name must be in single quotes
+# You can find your used favorite apps with the following command for Gnome 3
+# $ gsettings get org.gnome.shell favorite-apps
+'iceweasel.desktop'
+'org.gnome.Nautilus.desktop'
+'org.gnome.Terminal.desktop'
+'hexchat.desktop'
+'transmission-gtk.desktop'
+# 'keepass2.desktop'
+'keepass.desktop'
+'org.gnome.gedit.desktop'
+'rhythmbox.desktop'
+'empathy.desktop'
+'chromium.desktop'
+'evolution.desktop'
+'org.gnome.Contacts.desktop'
+'gvim.desktop'
+'org.gnome.Calendar.desktop'
+'org.gnome.Todo.desktop'

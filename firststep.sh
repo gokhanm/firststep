@@ -63,5 +63,8 @@ short_links
 # Tweak Settings
 tweak_settings
 
+# Activate Favorite Apps
+favorite_apps
+
 # Installation Complete. Ask for restart the system
 restart_system

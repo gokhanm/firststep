@@ -505,7 +505,7 @@ tweak_settings () {
     fi
 }
 
-# if 
+# if trim supported. Run cron daily
 ssd_trim_support () {
     trim_support="$(test $(hdparm -I /dev/sda | grep "TRIM supported" | wc -l ) -gt 0; echo $?)"
     
@@ -521,4 +521,36 @@ fstrim -v /home >> $LOG
 EOF
         chmod +x $cron_path
     fi
+}
+
+# Favorite apps function
+# Array must be seperated with comma
+favorite_apps () {
+    readarray favorite_apps < "settings/favorite_apps"
+
+    if [ ! -z "$favorite_apps" ]; then
+        for app in "${favorite_apps[@]}"
+        do
+            if [[ ! "$app" == "#"* ]];then
+                total_array+=($app)  
+            fi
+        done
+            
+        with_comma=$(printf ", %s" "${total_array[@]}")
+        with_comma=${with_comma:1}
+        convert_list="[${with_comma[@]}]"
+        
+        # for Gnome 3                     
+        if [[ ! "$(pgrep -f gnome | wc -l)" == 0  ]]; then
+            if [[ "$(gnome-shell --version | awk '{print $3 }' | cut -d'.' -f1)" == "3"* ]]; then
+                su - $user -c "gsettings set org.gnome.shell favorite-apps $convert_list"
+                
+                if [ $? -eq 0 ];then
+                    echo "$(textb "Activating Favorite Apps") $(textb "$app")"
+                else    
+                    echo "$(redb "ERROR") $(textb "Activating Favorite Apps") $(textb "$app")"
+                    exit 1
+                fi                        
+            fi
+        fi
 }
