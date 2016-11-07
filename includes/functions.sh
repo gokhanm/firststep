@@ -553,4 +553,5 @@ favorite_apps () {
                 fi                        
             fi
         fi
+    fi
 }
