@@ -288,7 +288,7 @@ bash_aliases () {
                     
                     if [[ "$duser" == "root" ]];then
                         bashrc="/root/.bashrc"
-                        bash_aliases="~/.bash_aliases"
+                        bash_aliases="/root/.bash_aliases"
                     else
                         bashrc="/home/$user/.bashrc"
                         bash_aliases="/home/$user/.bash_aliases"
@@ -480,11 +480,12 @@ tweak_settings () {
                     gnome_version="$(gnome-shell --version | awk '{print $3 }')"
                     version=${gnome_version%.*}
                     
-                    if [[ "$schema_name" == "desktop.calendar" ]]; then
-                        if [[ "$version" == "3.22" ]]; then
-                            schema="org.gnome.desktop.calendar"
-                        elif [[ "$version" == "3.14" ]]; then
+                    if [[ "$schema_name" == "desktop.calendar" ]]; then                           
+                        if [[ "$version" == "3.14" ]]; then
                             schema="org.gnome.shell.calendar"
+                        else
+                            # Gnome 3.22
+                            schema="org.gnome.desktop.calendar"
                         fi
                     fi
                     
@@ -493,7 +494,7 @@ tweak_settings () {
                     elif [[ "$schema_name" == "nautilus.desktop" ]]; then
                         schema="org.gnome.nautilus.desktop"
                     elif [[ "$schema_name" == "desktop.background" ]]; then
-                        schema="org.gnome.nautilus.desktop"
+                        schema="org.gnome.desktop.background"
                     elif [[ "$schema_name" == "desktop.wm.preferences" ]]; then
                         schema="org.gnome.desktop.wm.preferences"
                     elif [[ "$schema_name" == "mutter" ]];then
@@ -505,9 +506,9 @@ tweak_settings () {
                 
                     su - $user -c "gsettings set $schema $key $value"
                     if [ $? -eq 0 ];then
-                        echo "$(textb "Applying tweak settings") $(textb "$key") $(textb ": $value")"
+                        echo "$(textb "Applying tweak settings") $(textb "$schema") $(textb "$key") $(textb ": $value")"
                     else    
-                        echo "$(redb "ERROR") $(textb "Applying tweak settings") $(textb "$key") $(textb ": $value")"
+                        echo "$(redb "ERROR") $(textb "Applying tweak settings") $(textb "$schema") $(textb "$key") $(textb ": $value")"
                         exit 1
                     fi
                 fi            
@@ -554,7 +555,7 @@ favorite_apps () {
         # for Gnome 3                     
         if [[ ! "$(pgrep -f gnome | wc -l)" == 0  ]]; then
             if [[ "$(gnome-shell --version | awk '{print $3 }' | cut -d'.' -f1)" == "3"* ]]; then
-                su - $user -c "gsettings set org.gnome.shell favorite-apps $convert_list"
+                su - $user -c "gsettings set org.gnome.shell favorite-apps \"$convert_list\""
                 
                 if [ $? -eq 0 ];then
                     echo "$(textb "Activating Favorite Apps") $(textb "$app")"

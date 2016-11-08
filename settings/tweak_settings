@@ -2,7 +2,6 @@
 # for Clock
 desktop.interface|clock-show-date|true
 desktop.interface|clock-show-seconds|true
-desktop.interface|show-weekdate|true
 # for Calendar
 desktop.calendar|show-weekdate|true
 # for Desktop
