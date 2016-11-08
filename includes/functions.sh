@@ -100,7 +100,10 @@ install_package () {
                     else
                         echo "$(redb "ERROR") $(textb "Installation not complate: $pack")"
                         exit 1
-                    fi                    
+                    fi
+                else
+                    echo "$(redb "ERROR") $(textb "Operation System not understood. OS:") $(greenb "$os")"
+                    exit 1                
                 fi                   
             fi
         done
