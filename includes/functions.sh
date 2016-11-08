@@ -476,7 +476,18 @@ tweak_settings () {
             if [[ ! "$ts" == "#"* ]]; then
                 schema_name="$(echo $ts | cut -d'|' -f1)"
                 
-                if [[ ! "$(pgrep -f gnome | wc -l)" == "0"  ]]; then                
+                if [[ ! "$(pgrep -f gnome | wc -l)" == "0"  ]]; then
+                    gnome_version="$(gnome-shell --version | awk '{print $3 }')"
+                    version=${gnome_version%.*}
+                    
+                    if [[ "$schema_name" == "desktop.calendar" ]]; then
+                        if [[ "$version" == "3.22" ]]; then
+                            schema="org.gnome.desktop.calendar"
+                        elif [[ "$version" == "3.14" ]]; then
+                            schema="org.gnome.shell.calendar"
+                        fi
+                    fi
+                    
                     if [[ "$schema_name" == "desktop.interface" ]]; then
                         schema="org.gnome.desktop.interface"
                     elif [[ "$schema_name" == "nautilus.desktop" ]]; then
