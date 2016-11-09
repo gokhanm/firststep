@@ -37,9 +37,6 @@ export tmp="/tmp/firststep"
 # if os debian found use apt-get update command
 update_repo
 
-exit 1
-
-
 # Install Packages
 install_package
 

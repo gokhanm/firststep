@@ -70,9 +70,9 @@ password_box () {
     
     PASSWORD=$(dialog --backtitle "$backtitle" --title "$title" --clear --passwordbox "Enter your password for $user" $height $width 3>&1 1>&2 2>&3)
 
-    ret=$?
+    retval=$?
     
-    case $ret in
+    case $retval in
       0)
         passwd $PASSWORD;;
       1)
@@ -80,5 +80,42 @@ password_box () {
       255)
         echo "ESC pressed.";;
     esac
+}
+
+gauge () {
+    title=$1
+    msg=$2
+    height=$3
+    width=$4
+
+    (
+        for ((i = 0 ; i <= 100 ; i+=5)); do
+            sleep 0.1
+            echo $i
+        done
+    ) | dialog --title "$title" --gauge "$msg" $height $width 0
+}
+
+yes_no () {
+    backtitle=$1
+    title=$2
+    msg=$3
+    height=$4
+    width=$5
+        
+    dialog --backtitle "$backtitle" --title "$title"  --yesno "$msg" $height $width
+    
+    retval=$?
+    
+    case $retval in
+      1)
+        echo "No pressed. Exit"
+        exit 0
+      ;;
+      255)
+        echo "ESC pressed. Exit"
+        exit 0
+      ;;
+    esac    
 }
 

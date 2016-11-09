@@ -3,21 +3,6 @@
 
 source includes/dialog_functions.sh
 
-# text bold color terminal output
-textb() {
-	echo $(tput bold)${1}$(tput sgr0);
-}
-
-# green bold color terminal output
-greenb() {
-	echo $(tput bold)$(tput setaf 2)${1}$(tput sgr0);
-}
-
-# red bold color terminal output
-redb() {
-	echo $(tput bold)$(tput setaf 1)${1}$(tput sgr0);
-}
-
 # creater user
 create_user () {
     readarray usernames < "settings/user"
@@ -31,7 +16,7 @@ create_user () {
                 if [ $? -eq "0" ]; then
                     info_box "User already exists." 3 34 2 
                 else
-                    adduser $user
+                    adduser --disabled-password $user
                     password_box "First Step Installation" "Password" 10 30
                     info_box "User created with password" 3 34 2 
                 fi
@@ -52,12 +37,10 @@ find_os () {
 # If debian found using apt-get update command function
 update_repo () {
     if [[ "$os" == "Debian" ]]; then 
-        info_box "Updating Debian Repo" 3 34 2
-        apt-get update 2>&1 | tee $tmp/debian_update > /dev/null
-        
+        apt-get update > /dev/null
+       
         if [ $? -eq 0 ]; then
-            info_box "`cat $tmp/debian_update`" 10 80 5  
-            info_box "Debian Repo Updated" 3 34 2
+            info_box "Updated Debian Repo Update" 3 34 2
         else
             info_box "ERROR. Debian Repo Update" 3 34 2
             exit 1
@@ -67,12 +50,13 @@ update_repo () {
 
 upgrade_repo () {
     if [[ "$os" == "Debian" ]]; then 
-        textb "Upgrading Debian Packages"
-        apt-get upgrade -y
+        #info_box "Upgrading Debian Packages" 10 80 5
+        
+        apt-get upgrade -y > /dev/null
         if [ $? -eq 0 ]; then
-            echo "$(greenb "OK") $(textb "Debian Packages Upgraded")"
+            info_box "Upgraded Debian Repo Update" 3 34 2
         else
-            echo "$(redb "ERROR") $(textb "Debian Package Upgrade Error")"
+            info_box "ERROR. Debian Repo Upgrade" 3 34 2
             exit 1
         fi
     fi
@@ -82,39 +66,39 @@ upgrade_repo () {
 install_package () {
     # if argument given
     if [ ! -z "$1" ]; then
-        packages=($1)
+        apt-get install -y $1 2>&1 > /dev/null
     else
         readarray packages < "settings/packages"
-    fi
-    
-    if [ ! -z "$packages" ]; then
-        for pack in "${packages[@]}"
-        do
-            if [[ ! "$pack" == "#"* ]]; then
-                echo "$(textb "Installing Package: ") $(textb "$pack")"    
-                if [[ "$os" == "Debian" ]]; then
-                    apt-get install -y $pack
-                    if [ $? -eq 0 ]; then
-                        echo "$(greenb "OK") $(textb "Installation complate: $pack")"
+
+        if [ ! -z "$packages" ]; then
+            for pack in "${packages[@]}"
+            do
+                if [[ ! "$pack" == "#"* ]]; then
+                    info_box "Installing Package: $pack" 3 40 2
+                    if [[ "$os" == "Debian" ]]; then
+                        apt-get install -y $pack 2>&1 > /dev/null
+                        if [ $? -eq 0 ]; then
+                            info_box "Installed Package: $pack" 3 40 2
+                        else
+                            info_box "ERROR Installation package: $pack" 3 40 2
+                            exit 1
+                        fi
+                    elif [[ "$os" == "CentOS" ]] || [[ "$os" == "Redhat" ]]; then
+                        yum install -y $pack 2>&1  > /dev/null
+                        if [ $? -eq 0 ]; then
+                            info_box "Installed Package: $pack" 3 40 2
+                        else
+                            info_box "ERROR Installation package: $pack" 3 40 2
+                            exit 1
+                        fi
                     else
-                        echo "$(redb "ERROR") $(textb "Installation not complate: $pack")"
-                        exit 1
-                    fi
-                elif [[ "$os" == "CentOS" ]] || [[ "$os" == "Redhat" ]]; then
-                    yum install -y $pack
-                    if [ $? -eq 0 ]; then
-                        echo "$(greenb "OK") $(textb "Installation complate: $pack")"
-                    else
-                        echo "$(redb "ERROR") $(textb "Installation not complate: $pack")"
-                        exit 1
-                    fi
-                else
-                    echo "$(redb "ERROR") $(textb "Operation System not understood. OS:") $(greenb "$os")"
-                    exit 1                
-                fi                   
-            fi
-        done
-    fi
+                        info_box "ERROR Operation System not understood. OS: $os" 3 40 2
+                        exit 1                
+                    fi                   
+                fi
+            done
+        fi
+    fi        
 }
 
 # Apply keyboard shortcut settings from settings/keyboard_shortcuts
@@ -127,13 +111,12 @@ keyboard_shortcut () {
             if [[ ! "$key" == "#"* ]];then
                 if [[ ! "$(pgrep -f gnome | wc -l)" == 0  ]]; then
                     if [[ "$(gnome-shell --version | awk '{print $3 }' | cut -d'.' -f1)" == "3"* ]]; then
-                        echo "$(textb "Desktop Environment Found: ") $(textb "Gnome 3")"
-                        #su - $user -c "gsettings set org.gnome.desktop.wm.keybindings $1 \"$2\""
+                        info_box "Desktop Environment Found: Gnome 3" 3 40 2 
                         su - $user -c "gsettings set org.gnome.desktop.wm.keybindings $key"
                         if [ $? -eq 0 ];then
-                            echo "$(greenb "OK") $(textb "Keyboard shortcut added: $key")"
+                            info_box "Keyboard shortcut added: $key" 3 50 2
                         else    
-                            echo "$(redb "ERROR") $(textb "Keyboard shortcut not added: $key")"
+                            info_box "Keyboard shortcut not added: $key" 3 50 2
                             exit 1
                         fi
                     fi  
@@ -151,38 +134,25 @@ ssd_check () {
     ssd="$(cat /sys/block/$disk/queue/rotational)"
 
     if [[ "$ssd" == "0" ]]; then
-        read -p "$(redb "WARNING") $(textb "These changes may damage the
-        system. Do you want to continue? [Yy / Nn]")" yn
-        case $yn in
-            [Yy]* )
-                parsing_ssd_settings
-                echo "$(textb "SSD Found. Finding Linux Installation on Disk")"
-                echo "$(textb "Linux partition: ") $(textb "$partition")"
-                echo "$(textb "Finding Partition in /etc/fstab")"
-                sda_in_fstab="$(test $(grep $partition /etc/fstab | grep -v "#" | wc -l) -gt 0; echo $?)"
-                
-                if [[ "$sda_in_fstab" == "1" ]]; then
-                    echo "$(textb "$partition not found in /etc/fstab")"
-                    echo "$(textb "Finding UUID for ") $(textb "$partition")"
-                    uuid="$(blkid $partition | awk '{print $2}' | cut -d'"' -f2)"
-                    echo "$(textb "UUID Found:") $(textb "$uuid")"
-                    
-                    apply_ssd_settings $uuid
-                else
-                    apply_ssd_settings $partition
-                fi
-                
-                ssd_trim_support
-            ;;
-            [nN]* )
-                echo "$(greenb "OK") $(textb "Resuming without applying ssd
-                settings")"
-            ;;
-            * )
-                echo "$(textb "Please answer Y/y/n/N")"
-                ssd_check
-            ;;
-        esac
+        yes_no "First Step Install" "Fstab Configuration" "These changes may damage the system. Do you want to continue?" 8 60
+
+        parsing_ssd_settings
+        info_box "SSD Found. Finding Linux Installation on Disk" 3 40 2
+        info_box "Linux partition: $partition" 3 50 2
+        info_box "Finding Partition in /etc/fstab" 3 40 2        
+        sda_in_fstab="$(test $(grep $partition /etc/fstab | grep -v "#" | wc -l) -gt 0; echo $?)"
+        
+        if [[ "$sda_in_fstab" == "1" ]]; then
+            info_box "$partition not found in /etc/fstab" 3 50 2
+            info_box "Finding UUID for $partition" 3 40 2   
+            uuid="$(blkid $partition | awk '{print $2}' | cut -d'"' -f2)"
+            info_box "$partition UUID: $uuid" 3 50 2
+            apply_ssd_settings $uuid
+        else
+            apply_ssd_settings $partition
+        fi
+        
+        ssd_trim_support
     fi
 }
 
@@ -206,33 +176,32 @@ apply_ssd_settings () {
     cp /etc/fstab /tmp/
 
     if [ $? -eq 0 ]; then
-        echo "$(greenb "OK") $(textb "Backup /etc/fstab in tmp")"
+        info_box "Backup /etc/fstab in tmp" 3 40 2
 
         old_options="$(grep $1 /etc/fstab | awk '{print $4}')"
         new_options=$options
-
-        echo "$(textb "Changing $old_options with $new_options")"
+        
+        info_box "Changing $old_options with $new_options" 3 50 2
 
         sed -i "s/$old_options/$new_options/" /etc/fstab
 
         if [ $? -eq 0 ];then
-            echo "$(greenb "OK") $(textb "Editing fstab complate")"
-            echo "$(greenb "INFO") $(textb "Validating fstab settings")"
+            info_box "Edited fstab complate" 3 40 2
 
             mount -a
 
             if [ $? -eq 0 ];then
-                echo "$(greenb "OK") $(textb "Fstab validate complate")"
+                info_box "Fstab validate complate" 3 40 2
             else
-                echo "$(redb "ERROR") $(textb "Fstab settings error. Check fstab settings")"
+                info_box "Fstab settings error. Check fstab settings" 3 40 2
                 exit 1
             fi
         else
-            echo "$(redb "ERROR") $(textb "Editing fstab complate")"
+            info_box "ERROR.Edit fstab complate" 3 40 2
             exit 1
         fi
     else
-        echo "$(redb "ERROR") $(textb "Backup /etc/fstab in tmp")"
+        info_box "ERROR.Backup /etc/fstab in tmp" 3 40 2
         exit 1
     fi
 }
@@ -247,7 +216,7 @@ gnome_shell_ext () {
         do
             if [[ ! "$ext_id" == "#"* ]]; then
                 if [[ ! "$(pgrep -f gnome | wc -l)" == "0"  ]]; then
-                    echo "$(textb "Installing Gnome Extensions") $(textb "$ext_id")"
+                    info_box "Installing Gnome Extension. Id: $ext_id" 3 50 2
                     su - $user -c "bash $current_path/tools/gnome-shell-extension-installer $ext_id --restart-shell 2> /dev/null"
                 fi
             
@@ -262,26 +231,12 @@ running_path () {
 }
 
 # Restart system function
-restart_system () {
-    while true; do
-        read -p "$(redb "WARNING") $(textb "Installation Complate. Do you want to
-        restart the system? [Yy / Nn]")" yn
+restart_system () {        
+    yes_no "First Step Install" "Restart the System" "Installation Complate. Do you want to restart?" 8 60
 
-        case $yn in
-            [Yy]* )
-                echo "$(textb "Restarting the system")"
-                reboot
-            ;;
-            [Nn]* )
-                echo "$(textb "Installation Complate. Exit.")"
-                exit 1
-            ;;
-            * )
-                echo "$(textb "Please answer Y/y/n/N")"
-                break
-            ;;
-        esac
-    done
+    info_box "Restarting the system..." 3 50 2
+    restart
+
 }
 
 # Bash aliases function 
@@ -311,8 +266,14 @@ bash_aliases () {
                         # fix later
                         echo "alias $user_alias" >> $bash_aliases
                         
-                        if [[ -z "$duser" ]]; then
-                            chown $user:$user $bash_aliases
+                        if [ $? -eq 0 ];then
+                            info_box "Bash Aliases applied" 3 40 2
+                            if [[ -z "$duser" ]]; then
+                                chown $user:$user $bash_aliases
+                            fi                            
+                        else    
+                            info_box "ERROR.Bash Aliases applied" 3 40 2
+                            exit 1
                         fi
                     fi
                 fi
@@ -357,9 +318,9 @@ dot_files () {
                 
                 su - $duser -c "cp $new_path $orj_path"
                 if [ $? -eq 0 ];then
-                    echo "$(textb "Copying to") $(textb "$orj_path") $(textb "for $duser")"
-                else    
-                    echo "$(redb "Copying to") $(textb "$orj_path") $(textb "for $duser")"
+                    info_box "Copying to $orj_path for $duser" 3 50 2
+                else
+                    info_box "ERROR. Copying to $orj_path for $duser" 3 50 2
                     exit 1
                 fi                                          
             fi
@@ -377,8 +338,8 @@ download_file () {
         su - $user -c "mkdir $tmp"
     fi
       
-    echo "$(textb "Downloading file:") $(textb $last)"
-    curl $1 -# --output $tmp/$new_name    
+    info_box "Downloading file: $last" 3 50 2
+    curl $1 -s --output $tmp/$new_name    
 }
 
 # Clone or create path in to the ~/.vim/ folder
@@ -416,14 +377,14 @@ vim_settings () {
                         su - $user -c "[ -d $path/$repo_folder_name ] && echo '1' > $tmp/folder_found || echo '0' > $tmp/folder_found"
                         
                         if [ "$(cat $tmp/folder_found)" -eq 0 ]; then
-                            echo "$(textb "Cloning to") $(textb "$path") $(textb "for $duser")"
+                            info_box "Cloning to $path for $duser" 3 50 2
                             su - $duser -c "cd $path && git clone $url"
                             sleep 1
                         else
-                            echo "$(greenb "INFO") $(textb "Folder") $(textb "$repo_folder_name") $(textb "for $duser found passing...")"
+                            info_box "Folder $repo_folder_name for $duser found passing...." 3 50 2
                         fi
                     else
-                        echo "$(redb "ERROR") $(textb "Cloning path not found in settings/vim_settings")"
+                        info_box "ERROR. Cloning path not found in settings/vim_settings" 3 50 2                  
                         exit 1
                     fi
                 elif [[ "$rule" == "copy" ]]; then
@@ -435,9 +396,9 @@ vim_settings () {
                     
                     su - $duser -c "cp $new_path $path"
                     if [ $? -eq 0 ];then
-                        echo "$(textb "Copying to") $(textb "$path") $(textb "for $duser")"
+                        info_box "Copying to $path for $duser" 3 50 2
                     else    
-                        echo "$(redb "Copying to") $(textb "$path") $(textb "for $duser")"
+                        info_box "ERROR. Copying to $path for $duser" 3 50 2                        
                         exit 1
                     fi                                                              
                 fi
@@ -464,12 +425,13 @@ short_links () {
                     
                     if [ $? -eq 0 ];then
                         echo "$(textb "Creating short link") $(textb "$target") $(textb "to $slink")"
+                        info_box "Creating short link $target to $slink" 3 50 2
                     else    
-                        echo "$(redb "ERROR") $(textb "Creating short link") $(textb "$target") $(textb "to $slink")"
+                        info_box "ERROR.Creating short link $target to $slink" 3 50 2                        
                         exit 1
                     fi
                 else
-                    echo "$(greenb "INFO") $(textb "Short Link") $(textb "$slink") $(textb "found passing...")"
+                    info_box "Short Link $slink found passing..." 3 50 2
                 fi              
             fi
         done
@@ -516,9 +478,9 @@ tweak_settings () {
                 
                     su - $user -c "gsettings set $schema $key $value"
                     if [ $? -eq 0 ];then
-                        echo "$(textb "Applying tweak settings") $(textb "$schema") $(textb "$key") $(textb ": $value")"
+                        info_box "Applying tweak settings $schema $key: $value" 3 50 2
                     else    
-                        echo "$(redb "ERROR") $(textb "Applying tweak settings") $(textb "$schema") $(textb "$key") $(textb ": $value")"
+                        info_box "ERROR. Applying tweak settings $schema $key: $value" 3 50 2                        
                         exit 1
                     fi
                 fi            
@@ -568,9 +530,9 @@ favorite_apps () {
                 su - $user -c "gsettings set org.gnome.shell favorite-apps \"$convert_list\""
                 
                 if [ $? -eq 0 ];then
-                    echo "$(textb "Activating Favorite Apps") $(textb "$app")"
+                    info_box "Activating Favorite Apps \"$convert_list\"" 3 70 2
                 else    
-                    echo "$(redb "ERROR") $(textb "Activating Favorite Apps") $(textb "$app")"
+                    info_box "ERROR. Activating Favorite Apps \"$convert_list\"" 3 70 2                    
                     exit 1
                 fi                        
             fi

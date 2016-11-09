@@ -1,32 +1,30 @@
 #!/bin/bash
 
- ########################################################################
- #                                                                      #
- #                    GNOME Shell Extension Installer                   #
- #                                                                      #
- #   Version: 1.4.3 (14/10/2016)                                        #
- #   Author: Ian Brunelli <ian@brunelli.me>                             #
- #   URL: https://github.com/brunelli/gnome-shell-extension-installer   #
- #                                                                      #
- ########################################################################
+   #################################################################
+   #                                                               #
+   #              GNOME Shell Extension Installer 1.5              #
+   #                Copyright (C) 2016 Ian Brunelli                #
+   #                                                               #
+   #  https://github.com/brunelli/gnome-shell-extension-installer  #
+   #                                                               #
+   #################################################################
 
 usage_guide() {
   cat << EOF
-Usage: $SCRIPT_NAME EXTENSION_ID [ EXTENSION_ID... ] [ GNOME_VERSION ] [ OPTIONS ]
+Usage: $SCRIPT_NAME EXTENSION_ID [EXTENSION_ID...] [GNOME_VERSION] [OPTIONS]
 
 Options:
-  -s or --search [ STRING ]	Interactive search.
+  -s or --search [STRING]	Interactive search.
   --yes 			Skip all prompts.
   --no-install 			Saves the extension(s) in the current directory.
-  --restart-shell 		Restart GNOME Shell after the extensions are installed.
+  --restart-shell 		Restart Shell after installing all extensions.
   -h or --help 			Print this message.
 
 Usage examples:
-  # Install "Small Panel Icon" for GNOME Shell 3.12 answering yes to all questions:
-  $SCRIPT_NAME 861 3.12 --yes
-
-  # Search for extensions matching "User Themes":
-  $SCRIPT_NAME -s "User Themes"
+  $SCRIPT_NAME 307			# Install "Dash to Dock"
+  $SCRIPT_NAME 307 3.8		# Install for Shell 3.8
+  $SCRIPT_NAME 53 --no-install	# Download "Pomodoro"
+  $SCRIPT_NAME -s "User Themes"	# Search "User Themes"
 EOF
 }
 
@@ -46,14 +44,8 @@ check_version_validation() {
 }
 
 enable_extension() {
-  ENABLED_EXTENSIONS=$( gsettings get org.gnome.shell enabled-extensions |
-                        cut -f 1 -d "[" --complement )
-  [ "$( grep -v "$2" <<< "$ENABLED_EXTENSIONS" )" ] &&
-  { echo "[$1] Enabling extension"
-    [[ ${ENABLED_EXTENSIONS%?} ]] && SEPARATOR=", "
-    gsettings set org.gnome.shell enabled-extensions "[${ENABLED_EXTENSIONS%?}$SEPARATOR'$2']" &&
-    echo "[$1] Extension enabled"; } ||
-  echo "[$1] The extension is already enabled"
+  EXTL_OUTPUT=$( gnome-shell-extension-tool --enable-extension="$2" 2>&1 )
+  sed -n "s/^'.*' is\( now\)\?\(.*\)\.$/[$1] Extension\2/p" <<< "$EXTL_OUTPUT"
 }
 
 extract_extension() {
@@ -219,7 +211,6 @@ search_help() {
 c<number>	Display comments
 d<number(s)>	Get description(s)
 l<number(s)>	Get link(s) on extensions.gnome.org
-s<number(s)>	Save the extension(s) on the current directory
 p<number>	Go to page
 r		Print the search content again
 sn		Sort by name
@@ -297,7 +288,7 @@ interactive_search() {
           echo -e "\n$EXTENSION_COMMENTS\n"
         fi; }
       else
-        echo "[$COMMAND] Invalid extension number" >&2
+        echo "[${COMMAND:1}] Invalid extension number" >&2
       fi
     elif [[ $COMMAND =~ ^d([0-9 ])+$ ]]; then
       for n in ${COMMAND:1}; do
@@ -322,23 +313,6 @@ interactive_search() {
         else
           echo "[$n] Invalid extension number" >&2
         fi
-      done
-    elif [[ $COMMAND =~ ^s([0-9 ])+$ ]]; then
-      for n in $COMMAND; do
-        for n in ${COMMAND:1}; do
-          if extract_info "${EXTENSIONS_QUERY[$n]}" && [ $n -lt $TOTAL ]; then
-            [[ ${#EXTENSION_VERSIONS[@]} == 1 ]] &&
-            SELECTED_VERSION="${EXTENSION_VERSIONS[@]}"
-            check_version_availability "$GNOME_VERSION"
-            [ "$SELECTED_VERSION" ] ||
-            select_version "[$EXTENSION_NAME] "
-            [ "$SELECTED_VERSION" ] &&
-            download_version "${EXTENSIONS_QUERY[$n]}" "$SELECTED_VERSION" &&
-            move_file
-          else
-            echo "[$n] Invalid extension number" >&2
-          fi
-        done
       done
     elif [[ $COMMAND =~ ^p( )*[0-9]+$ ]]; then
       PAGE="$( echo ${COMMAND:1} | sed 's/^0*//' )"
@@ -399,6 +373,8 @@ interactive_search() {
       else
         echo "No search string specified" >&2
       fi
+    elif [[ ! $COMMAND ]]; then
+      continue
     else
       echo "Unknown command. Type h for help." >&2
     fi
@@ -437,32 +413,27 @@ PAGES=-1
 TOTAL=-1
 unset INSTALL_ARRAY INSTALLED SEARCH_STRING
 
-COUNTER="$#"
-while [ $COUNTER -gt 0 ]; do
+while [ $# -gt 0 ]; do
   if [[ $1 =~ ^-(h|-help)$ ]]; then
     usage_guide
     exit 0
   elif [[ $1 =~ ^-(s|-search)$ ]]; then
-    [[ $SEARCH_STRING ]] &&
+    [[ -n ${SEARCH_STRING+ } ]] &&
     { echo -e "$SCRIPT_NAME: excessive arguments" >&2
       exit 2; }
     if [[ ! $2 =~ ^- ]] && [[ ! $2 =~ ^[0-9\.]+$ ]]; then
       SEARCH_STRING="$2"
       shift 1
-      (( COUNTER -= 1 ))
     else
       SEARCH_STRING=""
     fi
     shift 1
-    (( COUNTER -= 1 ))
   elif [ "$1" == "--yes" ]; then
     SKIP_PROMPTS=1
     shift
-    (( COUNTER -= 1 ))
   elif [ "$1" == "--no-install" ]; then
     INSTALL="download"
     shift
-    (( COUNTER -= 1 ))
   elif [ "$1" == "--restart-shell" ]; then
     if [[ "$XDG_SESSION_TYPE" == "wayland" ]]; then
       echo -e "\e[0;33mWARNING\e[0m: Restart is not available on Wayland" >&2
@@ -471,15 +442,12 @@ while [ $COUNTER -gt 0 ]; do
       RESTART=1
     fi
     shift
-    (( COUNTER -= 1 ))
   elif [[ $1 =~ ^3\.[0-9\.]+$ ]]; then
     GNOME_VERSION="$1"
     shift
-    (( COUNTER -= 1 ))
   elif [[ $1 =~ ^[0-9]+$ ]]; then
     INSTALL_ARRAY+=( $1 )
     shift
-    (( COUNTER -= 1 ))
   elif [[ $1 =~ ^- ]]; then
     echo -e "$SCRIPT_NAME: unrecognized option '$1'\n" >&2
     usage_guide >&2
@@ -516,8 +484,8 @@ if [ ${#INSTALLED[@]} -gt 0 ]; then
   echo -n "${#INSTALLED[@]} extension(s) installed. "
   if [[ $RESTART == 1 ]]; then
     restart_shell
-  elif [[ $SEARCH_STRING ]] && [[ "$XDG_SESSION_TYPE" != "wayland" ]]; then
-    echo -n "Restart shell? (y/N) "
+  elif [[ -n ${SEARCH_STRING+ } ]] && [[ "$XDG_SESSION_TYPE" != "wayland" ]]; then
+    echo -n "Restart GNOME Shell? (y/N) "
     read RESTART
     [[ $RESTART =~ ^(y|Y) ]] && restart_shell
   else
