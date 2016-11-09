@@ -1,6 +1,8 @@
 #!/bin/bash
 # All first step installation functions
 
+source includes/dialog_functions.sh
+
 # text bold color terminal output
 textb() {
 	echo $(tput bold)${1}$(tput sgr0);
@@ -23,24 +25,22 @@ create_user () {
         for user in "${usernames[@]}"
         do
             if [[ ! "$user" == "#"* ]];then
-                echo "$(greenb "INFO") $(textb "Checking User: $user")"
+                info_box "Checking User: $user" 3 34 2 
                 check_user="$(id -u $user)"
 
                 if [ $? -eq "0" ]; then
-                    echo "$(greenb "INFO") $(textb "User already exists.
-                    Passing...")"
+                    info_box "User already exists." 3 34 2 
                 else
                     adduser $user
-                    passwd $user
-                    echo "$(greenb "INFO") $(textb "User created with password")"
+                    password_box "First Step Installation" "Password" 10 30
+                    info_box "User created with password" 3 34 2 
                 fi
                 export $user
             fi
         done
     else
-        echo "$(redb "ERROR") $(textb "You have to write username in
-        settings/user. Functions uses this username for installation.")"
-        exit 1
+        input_box 'First Step Installation' 'Please write username' 'Functions uses username for installation. Please write username' 8 60 'settings/user'
+        create_user
     fi
 }
 
@@ -52,12 +52,14 @@ find_os () {
 # If debian found using apt-get update command function
 update_repo () {
     if [[ "$os" == "Debian" ]]; then 
-        textb "Updating Debian Repo"
-        apt-get update
+        info_box "Updating Debian Repo" 3 34 2
+        apt-get update 2>&1 | tee $tmp/debian_update > /dev/null
+        
         if [ $? -eq 0 ]; then
-            echo "$(greenb "OK") $(textb "Debian Repo Updated")"
+            info_box "`cat $tmp/debian_update`" 10 80 5  
+            info_box "Debian Repo Updated" 3 34 2
         else
-            echo "$(redb "ERROR") $(textb "Debian Repo Update Error")"
+            info_box "ERROR. Debian Repo Update" 3 34 2
             exit 1
         fi
     fi
@@ -78,7 +80,12 @@ upgrade_repo () {
 
 # Install Package Function from settings/install
 install_package () {
-    readarray packages < "settings/packages"
+    # if argument given
+    if [ ! -z "$1" ]; then
+        packages=($1)
+    else
+        readarray packages < "settings/packages"
+    fi
     
     if [ ! -z "$packages" ]; then
         for pack in "${packages[@]}"

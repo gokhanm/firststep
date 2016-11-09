@@ -6,6 +6,7 @@
 
 source includes/version
 source includes/functions.sh
+source includes/dialog_functions.sh
 
 # root check
 if [ "$EUID" -ne 0 ]; then
@@ -13,10 +14,18 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-cat includes/banner
-echo "$(textb "First Step Installation Script Version:") $(textb "$version")"
-echo "$(textb "Installation starting please wait.")"
-sleep 3
+# Detecting OS 
+find_os
+
+# install dialog package
+install_package "dialog"
+
+info_box "Processing, please wait" 3 34 3
+
+welcome_message="Operation System: $os
+Script Version: $version"
+
+message_box "First Step Installation" "Welcome to first step" "$welcome_message" 8 60
 
 # create user if not exists
 create_user
@@ -25,12 +34,11 @@ create_user
 export tmp="/tmp/firststep"
 [ ! -d $tmp ] && su - $user -c "mkdir -p $tmp"
 
-# Detecting OS 
-find_os
-echo "$(textb "Operation System: ")$(textb "$os")"
-
 # if os debian found use apt-get update command
 update_repo
+
+exit 1
+
 
 # Install Packages
 install_package
