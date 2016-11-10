@@ -222,7 +222,8 @@ gnome_shell_ext () {
                         info_box "Gnome Extension. Id: $ext_id Installed" 3 40 2
                     else    
                         info_box "ERROR. Gnome Extension. Id: $ext_id" 3 40 2
-                        exit 1                    
+                        exit 1
+                    fi               
                 fi
             
             fi
