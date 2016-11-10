@@ -235,7 +235,7 @@ restart_system () {
     yes_no "First Step Install" "Restart the System" "Installation Complate. Do you want to restart?" 8 60
 
     info_box "Restarting the system..." 3 50 2
-    restart
+    reboot
 
 }
 
