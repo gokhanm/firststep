@@ -218,6 +218,11 @@ gnome_shell_ext () {
                 if [[ ! "$(pgrep -f gnome | wc -l)" == "0"  ]]; then
                     info_box "Installing Gnome Extension. Id: $ext_id" 3 50 2
                     su - $user -c "bash $current_path/tools/gnome-shell-extension-installer $ext_id --restart-shell 2> /dev/null"
+                    if [ $? -eq 0 ];then
+                        info_box "Gnome Extension. Id: $ext_id Installed" 3 40 2
+                    else    
+                        info_box "ERROR. Gnome Extension. Id: $ext_id" 3 40 2
+                        exit 1                    
                 fi
             
             fi
