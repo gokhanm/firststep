@@ -11,3 +11,6 @@ curl
 python3-pip
 python3-dev
 bleachbit
+virt-manager
+qemu-kvm
+libvirt-bin
