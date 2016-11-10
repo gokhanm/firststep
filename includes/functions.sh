@@ -530,9 +530,9 @@ favorite_apps () {
                 su - $user -c "gsettings set org.gnome.shell favorite-apps \"$convert_list\""
                 
                 if [ $? -eq 0 ];then
-                    info_box "Activating Favorite Apps \"$convert_list\"" 3 70 2
+                    info_box "Activating Favorite Apps" 3 70 2
                 else    
-                    info_box "ERROR. Activating Favorite Apps \"$convert_list\"" 3 70 2                    
+                    info_box "ERROR. Activating Favorite Apps" 3 70 2                    
                     exit 1
                 fi                        
             fi
