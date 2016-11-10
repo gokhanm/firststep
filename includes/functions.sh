@@ -129,7 +129,7 @@ keyboard_shortcut () {
 # If ssd found apply settings from settings/ssd 
 ssd_check () {
     # You should get 1 for hard disks and 0 for a SSD. 
-    partition="$(fdisk -l 2>/dev/null | grep '/dev/sd[a-z][1-9]' | grep "Linux" | grep -v "swap" | awk '{print $1}')"
+    partition="$(fdisk -l 2>/dev/null | grep '/dev/[^ ]*' | grep "Linux" | grep -v "swap" | awk '{print $1}')"
     disk="$(printf '%s\n' "${partition//[[:digit:]]/}" | cut -d'/' -f3)"
     ssd="$(cat /sys/block/$disk/queue/rotational)"
 
