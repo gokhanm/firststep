@@ -214,11 +214,11 @@ gnome_shell_ext () {
     readarray extensions < "settings/extensions"
 
     if [ ! -z "$extensions" ]; then
+        info_box "Installing Gnome Extension" 3 50 2
         for ext_id in "${extensions[@]}"    
         do
             if [[ ! "$ext_id" == "#"* ]]; then
                 if [[ ! "$(pgrep -f gnome | wc -l)" == "0"  ]]; then
-                    info_box "Installing Gnome Extension. Id: $ext_id" 3 50 2
                     su - $user -c "bash $current_path/tools/gnome-shell-extension-installer $ext_id --restart-shell"             
                 fi
             
