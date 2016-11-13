@@ -8,6 +8,7 @@ vim-gtk
 xpad
 git
 curl
+python-pip
 python3-pip
 python3-dev
 bleachbit
