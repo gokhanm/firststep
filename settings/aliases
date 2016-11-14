@@ -3,3 +3,5 @@
 # You have to separate username and alias with "|"
 # for user ---- alias
 root|guncelle='apt-get update && apt-get -y upgrade && apt-get -y dist-upgrade'
+|vi='vim'
+|ll='ls -alh'
