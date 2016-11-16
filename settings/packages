@@ -16,3 +16,4 @@ bleachbit
 virt-manager
 qemu-kvm
 libvirt-bin
+libssl-dev
