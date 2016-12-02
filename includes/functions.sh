@@ -20,6 +20,8 @@ create_user () {
                     password_box "First Step Installation" "Password" 10 30
                     info_box "User created with password" 3 34 2 
                 fi
+                # To clear gaps
+                user=`echo $user`
                 export $user
             fi
         done
@@ -219,7 +221,7 @@ gnome_shell_ext () {
         do
             if [[ ! "$ext_id" == "#"* ]]; then
                 if [[ ! "$(pgrep -f gnome | wc -l)" == "0"  ]]; then
-                    su - $user -c "bash $current_path/tools/gnome-shell-extension-installer $ext_id --restart-shell"             
+                    su - $user -c "bash $current_path/tools/gnome-shell-extension-installer $ext_id"             
                 fi
             
             fi
