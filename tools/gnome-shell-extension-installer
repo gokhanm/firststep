@@ -2,8 +2,10 @@
 
    #################################################################
    #                                                               #
-   #              GNOME Shell Extension Installer 1.5              #
-   #                Copyright (C) 2016 Ian Brunelli                #
+   #             GNOME Shell Extension Installer 1.6.2             #
+   #                                                               #
+   #       Copyright (C) 2017 Ian Brunelli <ian@brunelli.me>       #
+   #       Licensed under the GNU General Public License 2.0       #
    #                                                               #
    #  https://github.com/brunelli/gnome-shell-extension-installer  #
    #                                                               #
@@ -17,6 +19,7 @@ Options:
   -s or --search [STRING]	Interactive search.
   --yes 			Skip all prompts.
   --no-install 			Saves the extension(s) in the current directory.
+  --update 			Check for new versions.
   --restart-shell 		Restart Shell after installing all extensions.
   -h or --help 			Print this message.
 
@@ -28,51 +31,58 @@ Usage examples:
 EOF
 }
 
-check_version_validation() {
-  DISABLE_VERSION_VALIDATION=$( gsettings get org.gnome.shell disable-extension-version-validation )
-  [ "$DISABLE_VERSION_VALIDATION" == "true" ] ||
-  { echo -en "\nExtension version validation is enabled." \
-             "\nTo use extensions older than the running version of Shell, you have to disable it." \
-             "\nWould you like to disable it now (y/N)? "
-    [ $SKIP_PROMPTS ] &&
-    { echo "yes"
-      DO_IT="yes"; } ||
-    read DO_IT
-    [[ ${DO_IT::1} =~ (y|Y) ]] &&
-    gsettings set org.gnome.shell disable-extension-version-validation true &&
-    echo -e "\nThe extension version validation has been disabled."; }
-}
-
 enable_extension() {
   EXTL_OUTPUT=$( gnome-shell-extension-tool --enable-extension="$2" 2>&1 )
   sed -n "s/^'.*' is\( now\)\?\(.*\)\.$/[$1] Extension\2/p" <<< "$EXTL_OUTPUT"
 }
 
 extract_extension() {
+  [[ -f "$EXTENSIONS_PATH/$EXTENSION_UUID/metadata.json" ]] && CODE=7 || CODE=0
   mkdir -p "$EXTENSIONS_PATH/$2"
   echo "[$1] Extracting extension"
-  unzip -qq -o "/tmp/shell-$SELECTED_VERSION-extension-install.$3.zip" -d "$EXTENSIONS_PATH/$2"
-  rm -f "/tmp/shell-$SELECTED_VERSION-extension-install.$3.zip"
+  unzip -qq -o "$TMP_DIR/shell-$SELECTED_VERSION-extension-install.$3.zip" -d "$EXTENSIONS_PATH/$2"
+  rm -f "$TMP_DIR/shell-$SELECTED_VERSION-extension-install.$3.zip"
+  return $CODE
 }
 
 install_version() {
   [ "$INSTALL" == "download" ] && { move_file; return; }
-  extract_extension "$EXTENSION_NAME" "$EXTENSION_UUID" "$EXTENSION_ID" &&
-  enable_extension "$EXTENSION_NAME" "$EXTENSION_UUID" &&
-  INSTALLED+=("$EXTENSION_ID")
+  extract_extension "$EXTENSION_NAME" "$EXTENSION_UUID" "$EXTENSION_ID"
+  case "$?" in
+    0)
+      enable_extension "$EXTENSION_NAME" "$EXTENSION_UUID" &&
+      INSTALLED+=("$EXTENSION_ID")
+      ;;
+    7)
+      UPDATED+=("$EXTENSION")
+      ;;
+  esac
 }
 
 move_file() {
-  mv "/tmp/shell-$SELECTED_VERSION-extension-install.$EXTENSION_ID.zip" "$EXTENSION_UUID.shell-extension.zip" 2> /dev/null &&
+  mv "$TMP_DIR/shell-$SELECTED_VERSION-extension-install.$EXTENSION_ID.zip" "$EXTENSION_UUID.shell-extension.zip" 2> /dev/null &&
   echo "[$EXTENSION_NAME] Extension saved as $EXTENSION_UUID.shell-extension.zip" ||
   echo -e "\e[0;31mERROR\e[0m: Failed to save file" >&2
-  rm -f "/tmp/shell-$SELECTED_VERSION-extension-install.$EXTENSION_ID.zip"
+  rm -f "$TMP_DIR/shell-$SELECTED_VERSION-extension-install.$EXTENSION_ID.zip"
 }
 
 download_version() {
-  DOWNLOAD_TARGET=$( sed "s/^.*$2\": {\"pk[\": ]*\([^\"]*\),.*$/\1/" <<< "$1" )
+  DOWNLOAD_TARGET=$( sed "s/^.*$2\": {\"pk[\": ]\+\([0-9]\+\),.*$/\1/" <<< "$1" )
+  METADATA_FILE="$EXTENSIONS_PATH/$EXTENSION_UUID/metadata.json"
+  [ -f "$METADATA_FILE" ] &&
+  { VERSION_TARGET=$( sed "s/^.*$2\": {\"pk[\": ]\+[0-9]\+[\", ]\+version[\": ]\+\([0-9]\+\)}.*$/\1/" <<< "$1" )
+    VERSION_INSTALLED=$( sed -n "s/^[[:space:]]*\"version[\": ]\+\([0-9]\+\).*$/\1/p" "$METADATA_FILE" )
+    [[ $VERSION_INSTALLED ]] ||
+    { echo -e "\e[0;31mERROR\e[0m: Use your package manager to update this extension" >&2
+      return 1; }
+    [[ $VERSION_TARGET -le $VERSION_INSTALLED ]] &&
+    { if [ $UPDATE_MODE ]; then
+        echo "[$EXTENSION_NAME] The extension is up-to-date"
+        return 2
+      fi; } ||
+    echo "[$EXTENSION_NAME] New version available"; }
   echo "[$EXTENSION_NAME] Downloading extension"
-  if curl $DOWNLOAD_PARAMETERS -o "/tmp/shell-$SELECTED_VERSION-extension-install.$EXTENSION_ID.zip" \
+  if curl $DOWNLOAD_PARAMETERS -o "$TMP_DIR/shell-$SELECTED_VERSION-extension-install.$EXTENSION_ID.zip" \
           "$EXTENSIONS_SITE/download-extension/$EXTENSION_UUID.shell-extension.zip?version_tag=$DOWNLOAD_TARGET"
   then
     return 0
@@ -88,6 +98,15 @@ check_version_availability() {
     [ "$1" == "$VERSION" ] &&
     SELECTED_VERSION="$1"
   done
+  [[ ! $SELECTED_VERSION ]] &&
+  { TARGET=$( sed -n "s/^3\.\([0-9]\+\).*$/\1/p" <<< "$1" )
+    LATEST=$( sed -n "s/^3\.\([0-9]\+\).*$/\1/p" <<< "${EXTENSION_VERSIONS[0]}" )
+    [[ ${1%%\.*} == ${EXTENSION_VERSIONS[0]%%\.*} ]] &&
+    [[ $TARGET -gt $LATEST ]] &&
+    [[ $LATEST -gt 20 ]] &&
+    SELECTED_VERSION="${EXTENSION_VERSIONS[0]}" &&
+    [[ ! $UPDATE_MODE ]] &&
+    echo -e "\e[0;33mWARNING\e[0m: Extension not available for GNOME Shell $1, using $SELECTED_VERSION instead" >&2; }
 }
 
 select_version() {
@@ -119,14 +138,13 @@ get_other_version() {
     select_version; }
   echo
   [ "$SELECTED_VERSION" ] &&
-  check_version_validation &&
   download_version "$EXTENSION_INFO" "$SELECTED_VERSION"
 }
 
 extract_info() {
   EXTENSION_NAME=$( sed 's/^.*\"name\"[: \"]*\([^\"]*\).*$/\1/' <<< "$1" )
   EXTENSION_DESCRIPTION=$( sed 's/^.*\"description\": \"//g' <<< "$1" |
-                           sed 's/\", \"creator\".*$//g' |
+                           sed 's/\", \"[a-z]\+\".*$//g' |
                            sed 's/\\\"/\"/g' )
   EXTENSION_CREATOR=$( sed 's/^.*\"creator\"[: \"]*\([^\"]*\).*$/\1/' <<< "$1" )
   EXTENSION_UUID=$( sed 's/^.*\"uuid\"[: \"]*\([^\"]*\).*$/\1/' <<< "$1" )
@@ -142,7 +160,7 @@ download_info() {
   unset EXTENSION_INFO EXTENSIONS_QUERY EXTENSION_COMMENTS
   PAGES=-1
   TOTAL=-1
-  EXTENSION_INFO=$( curl $DOWNLOAD_PARAMETERS "$EXTENSIONS_SITE$1" )
+  EXTENSION_INFO=$( curl $DOWNLOAD_PARAMETERS "$EXTENSIONS_SITE${1// /%20}" )
   case "$?" in
     0)
       if [ "$( echo $EXTENSION_INFO | grep name )" ]; then
@@ -156,6 +174,9 @@ download_info() {
       echo -e "\e[0;31mERROR\e[0m: $3 could not be found" >&2
       return 22
       ;;
+    130)
+      return 1
+      ;;
     *)
       echo -e "\e[0;31mERROR\e[0m: $4 (curl error $?)" >&2
       return 1
@@ -164,21 +185,26 @@ download_info() {
 }
 
 extract_comments() {
+  [[ $# -ge 1 ]] && echo -e "[$1]\n\n"
   IFS=$'\n' read -d '' -r -a COMMENTS_QUERY <<< "$( echo $EXTENSION_COMMENTS | cut -f1 --complement -d"[" | sed 's/, {/\n/g' )"
 
   for COMMENT in "${COMMENTS_QUERY[@]}"; do
-    COMMENT_AUTHOR=$( sed 's/^.*\"username\"[: \"]*\([^\"]*\).*$/\1/' <<< "$COMMENT" )
-    COMMENT_ISCREATOR=$( sed 's/^.*\"is_extension_creator\"[: \"]*\([^\"]*\),.*$/\1/' <<< "$COMMENT" )
-    COMMENT_DATE=$( sed 's/^.*\"standard\"[: \"]*\([^\"]*\).*$/\1/' <<< "$COMMENT" )
-    COMMENT_RATING=$( sed 's/^.*\"rating\"[: \"]*\([^\"]*\),.*$/\1/' <<< "$COMMENT" )
-    COMMENT_TEXT=$( sed 's/^.*\"comment\"[: \"]*\([^\"]*[^\r\n]*\).*$/\1/' <<< "$COMMENT" |
-                    sed 's/", ".*//g' | sed 's/\\"/"/g' )
-    echo -n "\e[1;34m$COMMENT_AUTHOR\e[0m$(if [ "$COMMENT_ISCREATOR" == "true" ]; then echo -n " [A]"; fi)"
-    echo " ($COMMENT_DATE):"
-    if [[ "$COMMENT_RATING" =~ ^[0-9]+$ ]]; then echo "Rating: $COMMENT_RATING"; fi
-    if [ "$COMMENT_TEXT" != "$COMMENT" ]; then echo "$COMMENT_TEXT"; fi
-    echo
-    unset COMMENT_AUTHOR COMMENT_ISCREATOR COMMENT_DATE COMMENT_RATING COMMENT_TEXT
+    LINE=$( perl -ne '
+      foreach $a (qw/username is_extension_creator standard rating comment/) {
+       /"($a)"\s*:\s*("((?:[^"\\]|\\.)*)"|[a-z0-9]+)/;
+       if ($1 eq "username") {
+         print "\e[1;34m$3\e[0m"
+       } elsif ($1 eq "is_extension_creator") {
+         if ($2 eq "true") { print " [A]" }
+       } elsif ($1 eq "standard") {
+         print " ($3):\\n"
+       } elsif ($1 eq "rating") {
+         print "Rating: $2\\n"
+       } elsif ($1 eq "comment") {
+         print $s = $3 =~ s/\\\"/\"/gr, "\\n\\n";
+       }
+      }' <<< "$COMMENT" )
+    echo -e "$LINE"
   done
 }
 
@@ -197,6 +223,9 @@ download_comments() {
     22)
       echo -e "\e[0;31mERROR\e[0m: $3 could not be found" >&2
       return 22
+      ;;
+    130)
+      return 1
       ;;
     *)
       echo -e "\e[0;31mERROR\e[0m: $4 (curl error $?)" >&2
@@ -246,6 +275,7 @@ load_content() {
 }
 
 restart_shell() {
+  [[ $( pgrep gnome-shell ) ]] || return
   echo "Restarting GNOME Shell..."
   dbus-send --session --type=method_call \
             --dest=org.gnome.Shell /org/gnome/Shell \
@@ -254,9 +284,8 @@ restart_shell() {
 
 interactive_search() {
   echo -e "Type \"help\" to get information on how to use the search."
-  while [[ ! $EXIT ]]; do
-    echo -n "Enter a command: "
-    read COMMAND
+  while IFS='' read -r -e -d $'\n' -p "Enter a command: " COMMAND; do
+    trap echo SIGINT
     if [[ $COMMAND =~ ^[0-9]+( |[0-9])*$ ]]; then
       for n in $COMMAND; do
         if extract_info "${EXTENSIONS_QUERY[$n]}" && [ $n -lt $TOTAL ]; then
@@ -277,16 +306,15 @@ interactive_search() {
         extract_info "${EXTENSIONS_QUERY[${COMMAND:1}]}"
         echo "[$EXTENSION_NAME] Getting comments"
         download_comments "/comments/all/?pk=$EXTENSION_ID&all=true" \
-                          "No comments to display" \
+                          "No comment to display" \
                           "The page" \
                           "Failed to get comments" &&
-        { EXTENSION_COMMENTS=$( extract_comments )
-        if [[ $( echo -e "$EXTENSION_COMMENTS" | wc -l ) -gt 10 ]] &&
-           [[ $( type less 2> "/dev/null" ) ]]; then
-          less -R <<< "$( echo -e "[$EXTENSION_NAME]\n\n$EXTENSION_COMMENTS" )"
-        else
-          echo -e "\n$EXTENSION_COMMENTS\n"
-        fi; }
+        { if [[ $( wc -c <<< "$EXTENSION_COMMENTS" ) -gt 2000 ]] &&
+             [[ $( type less 2> "/dev/null" ) ]]; then
+            extract_comments "$EXTENSION_NAME" | less -R
+          else
+            echo -e "\n"; extract_comments; echo -e "\n"
+          fi; }
       else
         echo "[${COMMAND:1}] Invalid extension number" >&2
       fi
@@ -360,7 +388,7 @@ interactive_search() {
       [ $TOTAL -gt 0 ] &&
       echo -e "$SEARCH_CONTENT"
     elif [[ $COMMAND =~ ^(exit|quit|q)$ ]]; then
-      return
+      break
     elif [[ $COMMAND =~ ^/ ]]; then
       if [ "${COMMAND:1}" ]; then
         SEARCH_STRING="${COMMAND:1}"
@@ -378,16 +406,21 @@ interactive_search() {
     else
       echo "Unknown command. Type h for help." >&2
     fi
+    trap - SIGINT
+    history -s "$COMMAND"
   done
 }
 
-main_program() {
-  echo "[$2] Obtaining extension info"
-  download_info "/extension-info/?pk=$2" \
+get_info_from_id() {
+  echo "[$1] Obtaining extension info"
+  download_info "/extension-info/?pk=$1" \
                 "Blank file" \
-                "The extension $2" \
+                "The extension $1" \
                 "Failed to obtain extension info" &&
-  { extract_info "$EXTENSION_INFO"
+  extract_info "$EXTENSION_INFO"
+}
+
+get_extension() {
     check_version_availability "$1"
     { if [ "$SELECTED_VERSION" ]; then
         download_version "$EXTENSION_INFO" "$SELECTED_VERSION"
@@ -395,23 +428,29 @@ main_program() {
         echo "[$EXTENSION_NAME] Extension not available for GNOME Shell $1"
         get_other_version "$1"
       fi; } &&
-    install_version; }
+    install_version
 }
 
-GNOME_VERSION="$( grep -oP "[0-9]+\.[0-9]+" <<< "$( gnome-shell --version )" )"
+GNOME_VERSION=$( gnome-shell --version 2> /dev/null |
+                 sed -n "s/^.* \([0-9]\+\.[0-9]\+\).*$/\1/p" )
 DOWNLOAD_PARAMETERS="-Lfs"
 EXTENSIONS_SITE="https://extensions.gnome.org"
 SORT="popularity"
 
 [[ $EUID -eq 0 ]] &&
 EXTENSIONS_PATH="/usr/share/gnome-shell/extensions" ||
-EXTENSIONS_PATH="$HOME/.local/share/gnome-shell/extensions"
+{ EXTENSIONS_PATH="$HOME/.local/share/gnome-shell/extensions"
+  mkdir -p "$EXTENSIONS_PATH"; }
+[[ $( type gnome-shell 2> "/dev/null" ) ]] &&
+INSTALL="install" ||
+{ INSTALL="download"
+  echo -e "\e[0;33mWARNING\e[0m: Install is not available" >&2; }
+[[ -w "/tmp" ]] && TMP_DIR="/tmp" || TMP_DIR="."
 SCRIPT_NAME=$( basename "$0" )
-INSTALL="install"
 RESTART=0
 PAGES=-1
 TOTAL=-1
-unset INSTALL_ARRAY INSTALLED SEARCH_STRING
+unset INSTALL_ARRAY INSTALLED UPDATED SEARCH_STRING SKIP_PROMPTS UPDATE_MODE
 
 while [ $# -gt 0 ]; do
   if [[ $1 =~ ^-(h|-help)$ ]]; then
@@ -433,6 +472,9 @@ while [ $# -gt 0 ]; do
     shift
   elif [ "$1" == "--no-install" ]; then
     INSTALL="download"
+    shift
+  elif [ "$1" == "--update" ]; then
+    UPDATE_MODE=1
     shift
   elif [ "$1" == "--restart-shell" ]; then
     if [[ "$XDG_SESSION_TYPE" == "wayland" ]]; then
@@ -458,6 +500,10 @@ while [ $# -gt 0 ]; do
   fi
 done
 
+[[ $GNOME_VERSION ]] ||
+{ echo -e "\e[0;31mERROR\e[0m: You need to pass a GNOME version as argument" >&2
+  exit 5; }
+
 if [[ -n ${SEARCH_STRING+ } ]]; then
   [[ ${#INSTALL_ARRAY[@]} -gt 0 ]] &&
   { echo -e "$SCRIPT_NAME: excessive arguments" >&2
@@ -474,14 +520,54 @@ if [[ -n ${SEARCH_STRING+ } ]]; then
   interactive_search
 elif [ ${#INSTALL_ARRAY[@]} -gt 0 ]; then
   for EXTENSION in ${INSTALL_ARRAY[@]}; do
-    main_program "$GNOME_VERSION" "$EXTENSION"
+    get_info_from_id "$EXTENSION" &&
+    get_extension "$GNOME_VERSION"
+  done
+elif [[ $UPDATE_MODE ]]; then
+  UPDATE_LIST=($( find -L "$EXTENSIONS_PATH" -maxdepth 2 -name "metadata.json" \
+                       -exec sed -n "s/^[[:space:]]*\"uuid[\": ]\+\(.*\)\".*$/\1/p" {} \; ))
+  for EXTENSION in ${UPDATE_LIST[@]}; do
+    IS_GIT_DIR=$( type git > /dev/null 2> /dev/null &&
+                  git -C "$EXTENSIONS_PATH/$EXTENSION/" rev-parse --is-inside-work-tree 2> /dev/null )
+    if [[ $IS_GIT_DIR ]]; then
+      echo "[$EXTENSION] Updating from git"
+      GIT_UPDATE=$( LANG=en_US git -C "$EXTENSIONS_PATH/$EXTENSION/" pull 2>&1 )
+      case "$GIT_UPDATE" in
+        "Already up-to-date.")
+          echo "[$EXTENSION] The extension is up-to-date"
+          ;;
+        "")
+          echo -e "\e[0;31mERROR\e[0m: Failed to update extension (git exit code $?)" >&2
+          ;;
+        *)
+          echo "[$EXTENSION] Extension updated"
+          cat <<< "$GIT_UPDATE"
+          UPDATED+=("$EXTENSION")
+          ;;
+      esac
+    else
+      echo "[$EXTENSION] Searching extensions.gnome.org"
+      download_info "/extension-query/?search=${EXTENSION}" \
+                    "Extension not found" \
+                    "The search page for \"$SEARCH_STRING\"" \
+                    "Failed to obtain extension info" &&
+      { IFS=$'\n' read -d '' -r -a EXTENSIONS_QUERY <<< "$( echo $EXTENSION_INFO | cut -f1 --complement -d"[" | sed 's/{[\"]*shell_version_map[\"]*:/\n/g' )"
+        unset EXTENSION_INFO
+        for SEARCH_RESULT in "${EXTENSIONS_QUERY[@]}"; do
+          extract_info "$SEARCH_RESULT"
+          [[ "$EXTENSION" == "$EXTENSION_UUID" ]] &&
+          { EXTENSION_INFO="$SEARCH_RESULT"; break; }
+        done
+        [[ $EXTENSION_INFO ]] && get_extension "$GNOME_VERSION"; }
+    fi
   done
 else
   usage_guide
 fi
 
-if [ ${#INSTALLED[@]} -gt 0 ]; then
-  echo -n "${#INSTALLED[@]} extension(s) installed. "
+[[ ${#INSTALLED[@]} -gt 0 ]] && echo -n "${#INSTALLED[@]} new extension(s) installed. "
+[[ ${#UPDATED[@]} -gt 0 ]] && echo -n "${#UPDATED[@]} extension(s) updated. "
+if [[ ${#INSTALLED[@]} -gt 0 ]] || [[ ${#UPDATED[@]} -gt 0 ]]; then
   if [[ $RESTART == 1 ]]; then
     restart_shell
   elif [[ -n ${SEARCH_STRING+ } ]] && [[ "$XDG_SESSION_TYPE" != "wayland" ]]; then
